@@ -1,4 +1,4 @@
-function [data, channel, epochs] = prepareData(projectDir, subject, sessions, tasks, runnums, ...
+function [data, channels, epochs, t, data_slc, ci_slc] = tt_prepareData(projectDir, subject, sessions, tasks, runnums, ...
     inputFolder, description, specs)
 
 % <projectDir>
@@ -27,13 +27,15 @@ end
 
 % <specs>
 if ~exist('specs', 'var') || isempty(specs), specs = struct(); end
+if ~isfield(specs,'save_plot'), specs.save_plot = true; end
 if ~isfield(specs,'epoch_t') || isempty(specs.epoch_t), specs.epoch_t = [-0.2 1.2];end
 if ~isfield(specs,'base_t') || isempty(specs.base_t), specs.base_t = [min(specs.epoch_t) 0];end
 if ~isfield(specs,'chan_names'), specs.chan_names = []; end
 if ~isfield(specs,'stim_names'), specs.stim_names = []; end
+if ~isfield(specs,'plot_smooth'), specs.plot_smooth = 0; end
 if ~isfield(specs,'plot_data'), specs.plot_data = true; end
 if ~isfield(specs,'plot_cmap') || isempty(specs.plot_cmap), specs.plot_cmap = 'parula'; end
-if ~isfield(specs,'average_channels') || isempty(specs.average_channels), specs.average_channels = false; end
+if ~isfield(specs,'average_stims') || isempty(specs.average_stims), specs.average_stims = false; end
 
 %% load data as bidsEcogPlotTrials
 
@@ -72,8 +74,10 @@ channels = channels(chan_idx,:);
 
 % Epoch the data
 [epochs, t] = ecog_makeEpochs(data, events.onset, specs.epoch_t, channels.sampling_frequency(1));
+%- check if need to convert run_name into numbers
+if iscell(events.run_name), run_name = cell2mat(events.run_name); end
 fprintf('[%s] Found %d epochs across %d runs and %d sessions \n', ...
-    mfilename, size(epochs,2), length(unique(events.run_name)), length(unique(events.session_name)));
+    mfilename, size(epochs,2), length(unique(run_name)), length(unique(events.session_name)));
 
 % Baseline correct the epochs
 switch description
@@ -105,20 +109,84 @@ for ii = 1:length(stim_names)
 end
 if specs.average_stims, stim_idx = {vertcat(stim_idx{:})}; stim_names = {'all stim averaged'}; end%{[stim_names{:}]};
 
-
 %% plot data
+
+data_slc = nan(length(t), length(stim_names), numel(chan_idx));
+ci_slc   = nan(length(t), 2, length(stim_names), numel(chan_idx));
+
+% Loop over electrodes
+for ee = 1:numel(chan_idx)
+
+    if ~isnan(chan_idx(ee))
+
+        % Loop over trial types
+        for ss = 1:length(stim_idx)
+
+            this_epoch = epochs(:,stim_idx{ss}, ee);
+            this_trial = mean(this_epoch,2, 'omitnan');
+            llim = this_trial - std(this_epoch,0,2, 'omitnan')/sqrt(length(stim_idx{ss}));
+            ulim = this_trial + std(this_epoch,0,2, 'omitnan')/sqrt(length(stim_idx{ss}));
+            CI = [llim ulim];
+
+            % Plot
+            if specs.plot_smooth > 0
+                this_trial = smooth(this_trial,specs.plot_smooth);
+                if ~isempty(CI)
+                    CI(:,1) = smooth(CI(:,1),specs.plot_smooth);
+                    CI(:,2) = smooth(CI(:,2),specs.plot_smooth);
+                end
+            end
+
+            % Collect data in output
+            data_slc(:,ss,ee) = this_trial;
+            ci_slc(:,:,ss,ee) = CI; % CI between trials
+        end
+
+    end
+end
 
 if specs.plot_data
 
-    % Set plot settings
-    if ischar(specs.plot_cmap)
-        cmap = eval(specs.plot_cmap);
-        colors = cmap(1:round((length(cmap)/length(stim_idx))):length(cmap),:);
-    else
-        colors = specs.plot_cmap(1:length(stim_idx),:);
+    figureName = sprintf('selecteddata_bystimulus_allelectrodes');
+    FontSz = 20;
+    FigSz = [400 200 2000 1200];
+
+    %     % Plot each condition as a separate timecourse, all electrodes superimposed
+    figure('Name', figureName); hold on;
+    colors = parula(height(channels)+1);
+    for ii = 1:height(channels), plot(flatten(data_slc(:,:,ii)), 'LineWidth', 2, 'Color', colors(ii,:));end
+    set(gca, 'xtick', (0:length(stim_names))*size(data_slc,1)+1, 'xgrid', 'on', 'xticklabel', stim_names, 'xticklabelrotation', 45);
+    axis tight
+    set(gcf, 'Position', FigSz);
+    set(gca, 'FontSize', FontSz);
+    legend(channels.name);
+    ylabel('x-fold increase in broadband power');
+
+    if specs.save_plot 
+        saveDir = fullfile(pwd, 'figures', 'data');
+        if ~exist(saveDir, 'dir'), mkdir(saveDir);end
+        fprintf('[%s] Saving figures to %s \n',mfilename, saveDir);
+        saveas(gcf, fullfile(saveDir, figureName), 'png'); close;
     end
 
+    % Plot each condition as a separate timecourse, all electrodes
+    % averaged
+    figureName = sprintf('selecteddata_bystimulus_electrodeaverage');
+    figure('Name', figureName); hold on;
+    plot(flatten(mean(data_slc, 3, 'omitnan')), 'LineWidth', 2, 'Color', 'k');
+    set(gca, 'xtick', (0:length(stim_names))*size(data_slc,1)+1, 'xgrid', 'on', 'xticklabel', stim_names, 'xticklabelrotation', 45);
+    axis tight
+    set(gcf, 'Position', FigSz);
+    set(gca, 'FontSize', FontSz);
+    ylabel('x-fold increase in broadband power');
 
+    % save Plot?
+    if specs.save_plot 
+        saveDir = fullfile(pwd, 'figures', 'data');
+        if ~exist(saveDir, 'dir'), mkdir(saveDir);end
+        fprintf('[%s] Saving figures to %s \n',mfilename, saveDir);
+        saveas(gcf, fullfile(saveDir, figureName), 'png'); close;
+    end
 
 end
-end
+
