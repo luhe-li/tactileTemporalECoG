@@ -11,7 +11,7 @@ function tt_doModelFits(modelfun,stim,data,channels,srate,t,stim_info,options,sa
 
 % Save options
 if ~exist('saveStr', 'var'), saveStr = []; end
-if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = fullfile(analysisRootPath, 'results'); end
+if ~exist('saveDir', 'var') || isempty(saveDir), saveDir = fullfile(tt_bidsRootPath, 'derivatives','modelFit','results'); end
 if ~isfield(options,'fitaverage') || isempty(options.fitaverage), options.fitaverage = false; end
 
 % Some formatting
@@ -20,6 +20,7 @@ if ~iscell(modelfun), modelfun = {modelfun}; end
 % Fit model(s)
 if options.average_elecs
     preprocName = 'electrodeaverages';
+    data        = mean(data,3,"omitnan");
 else
     preprocName = 'individualelecs';
 end
@@ -39,35 +40,21 @@ for ii = 1:size(modelfun,2)
         params = [];
         pred = [];
         data_concat = [];
-        channels_concat = [];
         
         % Fit multiple times to average
         for jj = 1:options.nfits
             fprintf('[%s] Starting fit on average %d of %d \n', mfilename, jj, options.nfits);
-           
-            [~, channels_av, group_prob] = groupElecsByVisualArea(channels, 'probabilisticresample', options.areanames);
-            fun = @mean;
-            numboot = 1; % no bootstrapping, just one assignment
-            [data_av, ~, ~, n_elecs_selected] = averageWithinArea(data, group_prob, fun, numboot);
-            [params_av, pred_av] = tde_fitModel(objFunction, stim, data_av, srate, options);
-            
-            % overwrite n_elecs_selected in channels table
-            channels_av.number_of_elecs = n_elecs_selected;
-            % add column to reflect number of fit
-            channels_av.nfit = ones(height(channels_av),1) * jj;
-            % remove subjects_name column because it doesn't match the selected elecs 
-            channels_av = removevars(channels_av, {'subject_name'});
-            % concatenate 
+            [params_av, pred_av] = tde_fitModel(objFunction, stim, data, srate, options);            
             params = cat(2,params,params_av);
             pred = cat(3,pred,pred_av);
             data_concat = cat(3,data_concat,data_av);
-            channels_concat = vertcat(channels_concat, channels_av);
+
         end
         data = data_concat;
         channels = channels_concat;
     else
         % Fit once 
-        [params, pred] = tde_fitModel(objFunction, stim, data, srate, options);
+        [params, pred] = tt_fitModel(objFunction, stim, data, srate, options);
     end
     
     % SAVE RESULTS
