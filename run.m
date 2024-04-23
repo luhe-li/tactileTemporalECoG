@@ -68,3 +68,6 @@ tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.opti
 
 %% 5. Plot derived and fitted parameters
 
+% model parameters
+saveDir = [];%fullfile(analysisRootPath, 'figures', 'modelparams');
+tt_plotParams(results, D.channels, D.options, saveDir);%close;
