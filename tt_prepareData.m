@@ -1,4 +1,4 @@
-function [data, channels, epochs, t, data_slc, ci_slc] = tt_prepareData(projectDir, subject, sessions, tasks, runnums, ...
+function [data_slc, channels, t, srate] = tt_prepareData(projectDir, subject, sessions, tasks, runnums, ...
     inputFolder, description, specs)
 
 % <projectDir>
@@ -40,11 +40,10 @@ if ~isfield(specs,'average_stims') || isempty(specs.average_stims), specs.averag
 %% load data as bidsEcogPlotTrials
 
 % Load data
-
 dataPath = fullfile(projectDir, 'derivatives', inputFolder);
-writePath = fullfile(projectDir, 'derivatives', 'ECoGFigures', subject, 'DNfit');
+writePath = fullfile(projectDir, 'derivatives', 'figures', subject, 'plotData');
 
-[data, channels, events] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description, 512);
+[data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description, 512);
 
 % Select channels
 chan_names = specs.chan_names;
@@ -149,7 +148,7 @@ if specs.plot_data
 
     figureName = sprintf('selecteddata_bystimulus_allelectrodes');
     FontSz = 20;
-    FigSz = [400 200 2000 1200];
+    FigSz = [400 200 2000 800];
 
     %     % Plot each condition as a separate timecourse, all electrodes superimposed
     figure('Name', figureName); hold on;
@@ -163,10 +162,9 @@ if specs.plot_data
     ylabel('x-fold increase in broadband power');
 
     if specs.save_plot 
-        saveDir = fullfile(pwd, 'figures', 'data');
-        if ~exist(saveDir, 'dir'), mkdir(saveDir);end
-        fprintf('[%s] Saving figures to %s \n',mfilename, saveDir);
-        saveas(gcf, fullfile(saveDir, figureName), 'png'); close;
+        if ~exist(writePath, 'dir'), mkdir(writePath);end
+        fprintf('[%s] Saving figures to %s \n',mfilename, writePath);
+        saveas(gcf, fullfile(writePath, figureName), 'png'); close;
     end
 
     % Plot each condition as a separate timecourse, all electrodes
@@ -182,10 +180,9 @@ if specs.plot_data
 
     % save Plot?
     if specs.save_plot 
-        saveDir = fullfile(pwd, 'figures', 'data');
-        if ~exist(saveDir, 'dir'), mkdir(saveDir);end
-        fprintf('[%s] Saving figures to %s \n',mfilename, saveDir);
-        saveas(gcf, fullfile(saveDir, figureName), 'png'); close;
+        if ~exist(writePath, 'dir'), mkdir(writePath);end
+        fprintf('[%s] Saving figures to %s \n',mfilename, writePath);
+        saveas(gcf, fullfile(writePath, figureName), 'png'); close;
     end
 
 end
