@@ -55,10 +55,16 @@ datatype = 'electrodeaverages';
 
 % Compute R2 and derived parameters
 objFunction = modelfun;
-[results] = tt_evaluateModelFit(D,1);
-
+includeDerivedParams = false;
+[results] = tt_evaluateModelFit(D,includeDerivedParams);
 
 %% 4. Plot timecourses and fits
 
+% Provide a directory to save figures (optional)
+saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
+
+% Plot multiple model predictions (superimposed)
+tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})
 
 %% 5. Plot derived and fitted parameters
+
