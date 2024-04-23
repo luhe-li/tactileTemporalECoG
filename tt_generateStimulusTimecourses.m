@@ -9,7 +9,7 @@ function [stim, stimInfo] = tt_generateStimulusTimecourses(stimNames,t, stimInfo
 % <subjectList>
 if ~exist('stimInfo', 'var') || isempty(stimInfo)
     fprintf('[%s] Loading stimulus info \n',mfilename);
-    stimInfo_fname = fullfile(pwd, 'stiminfo.tsv');
+    stimInfo_fname = fullfile(tt_RootPath, 'stiminfo.tsv');
     stimInfo = readtable(stimInfo_fname, 'FileType', 'text');
 end
 

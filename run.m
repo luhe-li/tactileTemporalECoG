@@ -4,7 +4,7 @@
 
 % Load or (re)compute the processed data
 compute     = false;
-bidsDir     = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
+bidsDir     = tt_bidsRootPath;
 subject     = 'umcudrouwen';
 session     = 'umcuiemu01';
 task        = 'vtstemporalpattern';
