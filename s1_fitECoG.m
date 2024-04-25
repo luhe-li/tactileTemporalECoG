@@ -83,5 +83,3 @@ tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.opti
 saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'figure', subject);
 tt_plotParams(results, D.channels, D.options, saveDir);%close;
 
-
-
