@@ -43,7 +43,7 @@ if ~isfield(specs,'average_stims') || isempty(specs.average_stims), specs.averag
 dataPath = fullfile(projectDir, 'derivatives', inputFolder);
 writePath = fullfile(projectDir, 'derivatives', 'modelFit', 'figure', subject);
 
-[data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description, 512);
+[data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description);
 
 % Select channels
 chan_names = specs.chan_names;
