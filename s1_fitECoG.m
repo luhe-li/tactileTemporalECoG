@@ -1,6 +1,7 @@
 
 
-%% knobs
+%% knobs and basic info
+
 fitIndivElecs = true;
 options           = [];
 if fitIndivElecs
@@ -11,8 +12,6 @@ else
     datatype = 'electrodeaverages';
 end
 
-%% 1: load ECoG data
-
 % Load or (re)compute the processed data
 compute     = false;
 bidsDir     = tt_bidsRootPath;
@@ -22,6 +21,8 @@ task        = 'vtstemporalpattern';
 numruns     = 1;
 inputFolder = 'ECoGBroadband_exclude110Hz';
 description = 'broadband';
+
+%% 1: load ECoG data
 
 % Select epochs and channels, average trials within stimulus condition
 specs.plot_data    = false;
@@ -61,7 +62,7 @@ tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options);
 modelfun = @DN;
 xvalmode = 0;
 % datatype = 'electrodeaverages';
-% datatype = 'individualelecs';
+datatype = 'individualelecs';
 [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % Compute R2 and derived parameters
@@ -69,7 +70,7 @@ objFunction = modelfun;
 includeDerivedParams = false;
 [results] = tt_evaluateModelFit(D,includeDerivedParams);
 
-%% 4. Plot timecourses and fits
+%% 4. Plot timecourses of data and fits
 
 % Provide a directory to save figures (optional)
 saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
@@ -77,9 +78,20 @@ saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
 % Plot multiple model predictions (superimposed)
 tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})
 
-%% 5. Plot derived and fitted parameters
+%% 5. Plot summed response of data and fits
 
-% model parameters
-saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'figure', subject);
+% choose to plot recovery from adapatation for TWOPULSE
+D.options.plotRecovery = true;
+saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
+timepointsOfInterest = [0, 1];
+tt_plotSumDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'},timepointsOfInterest)
+
+%% 6. Plot derived and fitted parameters
+
+% Provide a directory to save figures (optional)
+saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
+
+% plot fitted parameters (see compareVSParam.m for comparison between visual and tactile datasets)
 tt_plotParams(results, D.channels, D.options, saveDir);%close;
+
 

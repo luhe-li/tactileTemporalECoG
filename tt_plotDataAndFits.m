@@ -26,7 +26,7 @@ else
     dataWasAveraged = false;
 end
 
-%% Plot data and predictions
+%% Plot data and predictions of timecourse
 colors = {'r', 'b', 'c', 'm', 'g', 'y'}; % assuming we'll never plot >6 model fits at a time
 
 % Prepare legend
