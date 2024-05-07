@@ -26,8 +26,8 @@ description = 'broadband';
 
 % Select epochs and channels, average trials within stimulus condition
 specs.plot_data    = false;
-specs.plot_smooth  = 1;
-specs.epoch_t      = [-0.4 1.8]; % stimulus epoch window
+specs.plot_smooth  = 1; % could try some other values
+specs.epoch_t      = [-0.4, 2.0];%[-0.4 1.8]; % stimulus epoch window
 specs.base_t       = [-0.4 -0.1]; % blank epoch window
 specs.chan_names   = {'C03', 'C04', 'C11', 'C12'};
 specs.stim_names   = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6',...
@@ -41,7 +41,7 @@ specs.stim_names   = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'O
 % try fitting DN model by reusing Iris' codes, removing probabilistic
 % resample step
 
-fname             = 'DN';
+fname             = 'LINEAR';
 modelfun          = str2func(fname);
 
 % Define options
@@ -59,7 +59,7 @@ tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options);
 %% 3: Model evaluation
 
 % Load data and fits
-modelfun = @DN;
+modelfun = @LINEAR;
 xvalmode = 0;
 % datatype = 'electrodeaverages';
 datatype = 'individualelecs';
@@ -81,9 +81,8 @@ tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.opti
 %% 5. Plot summed response of data and fits
 
 % choose to plot recovery from adapatation for TWOPULSE
-D.options.plotRecovery = true;
 saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
-timepointsOfInterest = [0, 1];
+timepointsOfInterest = [0, 2];
 tt_plotSumDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'},timepointsOfInterest)
 
 %% 6. Plot derived and fitted parameters
@@ -93,5 +92,3 @@ saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
 
 % plot fitted parameters (see compareVSParam.m for comparison between visual and tactile datasets)
 tt_plotParams(results, D.channels, D.options, saveDir);%close;
-
-

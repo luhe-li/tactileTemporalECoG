@@ -35,7 +35,7 @@ for kk = 1:nModels, l{kk+1} = func2str(results(kk).model); end
 figure;
 set(gcf, 'Position', [0 0 1100 400]);
 t = tiledlayout(1, nCond);
-ylabel(t, 'Summed broadband power (0-1s)','FontSize', 20);
+ylabel(t, sprintf('Summed broadband power (%i-%.1fs)', timepointsOfInterest(1), timepointsOfInterest(2)),'FontSize', 20);
 
 d = data(t_ind,:,:);
 

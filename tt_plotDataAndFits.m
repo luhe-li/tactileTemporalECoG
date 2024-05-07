@@ -39,8 +39,8 @@ for ii = 1:nDatasets
     
     figure;
     set(gcf, 'Position', [400 200 1800 1200]);
-    t = tiledlayout(nCond, 1);
-    ylabel(t, 'X-fold increase in broadband power','FontSize', 20);
+    tt = tiledlayout(nCond, 1);
+    ylabel(tt, 'X-fold increase in broadband power','FontSize', 20);
 
     d = data(t_ind,:,ii);
 	maxresp = max(max(d(:))); % scale stimulus to max across conditions and dataset

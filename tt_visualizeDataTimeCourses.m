@@ -31,45 +31,45 @@ if recompute
 
 end
 
-%% plot spectra for temporal conditions
-% clear specs;
-% 
-% % Specify one of the three preprocessed data here:
-% inputFolder       = 'ECoGCAR'; 
-% description       = 'reref';
-% 
-% specs.epoch_t     = [-1 2]; % stimulus epoch window
-% specs.fft_blank_t = [-0.8 -0.1]; % fft blank epoch window
-% specs.fft_w       = 0.4;
-% specs.fft_ov      = 0.1;
-% specs.plot_ylim   = [10^-3 10^3];
-% specs.fft_stim_t  = [0 1.2];
-% 
-% % all channels on the grid
-% specs.chan_names  = {'C'};
-% specs.subplotdims = [4 8];
-% specs.subplotidx  = [32:-1:1];
-% specs.plot_type   = 'average';
-% 
-% specs.stim_names  = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6'};
-% bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); 
-% 
-% specs.stim_names  = {'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
-% bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); 
-% 
-% % subsets of channels
-% specs.subplotdims = [2 2];
-% specs.subplotidx  = [4:-1:1];
-% 
-% specs.chan_names  = {'C03', 'C04', 'C11', 'C12'};
-% 
-% specs.stim_names  = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6'};
-% specs.fft_stim_t  = [0 1.2];
-% bidsEcogPlotSpectra(projectDir, subject, session, task, [], [], [], specs, savePlot); %close;
-% 
-% specs.stim_names  = {'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
-% specs.fft_stim_t  = [0 1.8];
-% bidsEcogPlotSpectra(projectDir, subject, session, task, [], [], [], specs, savePlot); %close;
+% plot spectra for temporal conditions
+clear specs;
+
+% Specify one of the three preprocessed data here:
+inputFolder       = 'ECoGCAR'; 
+description       = 'reref';
+
+specs.epoch_t     = [-0.4 1.8];%[-1 2]; % stimulus epoch window
+specs.fft_blank_t = [-0.4 -0.1]; %[-0.8 -0.1]; % fft blank epoch window
+specs.fft_w       = 0.4;
+specs.fft_ov      = 0.1;
+specs.plot_ylim   = [10^-3 10^3];
+specs.fft_stim_t  = [0 1.2];
+
+% all channels on the grid
+specs.chan_names  = {'C'};
+specs.subplotdims = [4 8];
+specs.subplotidx  = [32:-1:1];
+specs.plot_type   = 'average';
+
+specs.stim_names  = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6'};
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); 
+
+specs.stim_names  = {'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); 
+
+% subsets of channels
+specs.subplotdims = [2 2];
+specs.subplotidx  = [4:-1:1];
+
+specs.chan_names  = {'C03', 'C04', 'C11', 'C12'};
+
+specs.stim_names  = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6'};
+specs.fft_stim_t  = [0 1.2];
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], [], [], specs, savePlot); %close;
+
+specs.stim_names  = {'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
+specs.fft_stim_t  = [0 1.8];
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], [], [], specs, savePlot); %close;
 
 %% plot broadband timecourses for temporal conditions
 
