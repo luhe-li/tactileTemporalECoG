@@ -2,7 +2,7 @@
 clear; close all;
 
 % Compare parameter estimates from the same model and fitting procedure
-modelfun = @DN;
+modelfun = @LINEAR_RECTF_EXP_NORM;
 xvalmode = 0;
 
 %% 1. Load averaged electrode fitting results

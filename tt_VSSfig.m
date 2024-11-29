@@ -69,6 +69,7 @@ for jj = 1:length(conditionsOfInterest)
     end
 
     set(gca, 'LineWidth', 2, 'FontSize', 25, 'TickDir', 'out');
+
     % add title
     set(gca, 'XTick',1:size(d,1):length(find(inx))*size(d,1));
     if contains(conditionsOfInterest{jj}, 'ONEPULSE')
@@ -88,6 +89,7 @@ end
 
 sprintf('R^2 = %.2f, %.2f', R2val)
 %% save
+
 figureName = sprintf('fits_%s', channels.name{ii});
 saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'VSSfigure');
 if ~exist(saveDir, 'dir'), mkdir(saveDir), end

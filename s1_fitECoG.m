@@ -38,10 +38,11 @@ specs.stim_names   = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'O
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(specs.stim_names, t);
 
 %% 2: Model fitting
+
 % try fitting DN model by reusing Iris' codes, removing probabilistic
 % resample step
 
-fname             = 'LINEAR';
+fname             = '@LINEAR_RECTF_EXP_NORM';
 modelfun          = str2func(fname);
 
 % Define options
@@ -59,7 +60,7 @@ tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options);
 %% 3: Model evaluation
 
 % Load data and fits
-modelfun = @LINEAR;
+modelfun = @LINEAR_RECTF_EXP_NORM;
 xvalmode = 0;
 % datatype = 'electrodeaverages';
 datatype = 'individualelecs';
