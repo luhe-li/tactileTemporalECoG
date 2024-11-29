@@ -46,7 +46,6 @@ for kk = 1:nModels
 
     figure; hold on
     set(gcf, 'Position', [0 0 1600 500]);
-    sgtitle(sprintf('%s, R^2 = %.2f', modelnames{kk}, R2val(kk)), 'FontSize', 25)
 
     % Subplot positions: % [left bottom width height]
     pos(1,:) = [0.05 0.62 0.9 0.30];
@@ -94,6 +93,7 @@ for kk = 1:nModels
 
     end
 
+    sgtitle(sprintf('%s, R^2 = %.2f', modelnames{kk}, R2val(kk)), 'FontSize', 25)
     figureName = sprintf('fits_%s_M%i', channels.name{ii},kk);
     print(gcf, fullfile(saveDir, figureName), '-dsvg');
     close;
