@@ -74,6 +74,8 @@ for jj = 1:length(conditionsOfInterest)
     kk=1;
     pred = squeeze(sum(results(kk).pred(t_ind,inx,:),1));
     m = mean(pred, 2, 'omitnan');
+    pred = squeeze(results(kk).pred(t_ind,inx,:));
+
     se = squeeze(prctile(pred,[15.87 84.13],2));
     tt_plotPoints(m, se, x, 'ci', 1,[], 50, colors{kk});
 

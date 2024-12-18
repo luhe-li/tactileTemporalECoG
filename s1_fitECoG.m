@@ -3,7 +3,7 @@
 %% knobs and basic info
 
 fitIndivElecs = true;
-options           = [];
+options       = [];
 if fitIndivElecs
     options.average_elecs = false;
     datatype = 'individualelecs';
@@ -42,7 +42,7 @@ specs.stim_names   = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'O
 % try fitting DN model by reusing Iris' codes, removing probabilistic
 % resample step
 
-fname             = '@LINEAR_RECTF_EXP_NORM';
+fname             = '@DN';
 modelfun          = str2func(fname);
 
 % Define options
@@ -50,7 +50,6 @@ options.doplots   = true;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
-% options.average_elecs = false;
 options.fitaverage = false;
 options.nfits     = 1000; % if fit average
 
@@ -60,10 +59,8 @@ tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options);
 %% 3: Model evaluation
 
 % Load data and fits
-modelfun = @LINEAR_RECTF_EXP_NORM;
+modelfun = @DN;
 xvalmode = 0;
-% datatype = 'electrodeaverages';
-datatype = 'individualelecs';
 [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % Compute R2 and derived parameters
@@ -79,17 +76,17 @@ saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
 % Plot multiple model predictions (superimposed)
 tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})
 
-%% 5. Plot summed response of data and fits
-
-% choose to plot recovery from adapatation for TWOPULSE
-saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
-timepointsOfInterest = [0, 2];
-tt_plotSumDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'},timepointsOfInterest)
-
-%% 6. Plot derived and fitted parameters
-
-% Provide a directory to save figures (optional)
-saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
-
-% plot fitted parameters (see compareVSParam.m for comparison between visual and tactile datasets)
-tt_plotParams(results, D.channels, D.options, saveDir);%close;
+% %% 5. Plot summed response of data and fits
+% 
+% % choose to plot recovery from adapatation for TWOPULSE
+% saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
+% timepointsOfInterest = [0, 2];
+% tt_plotSumDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'},timepointsOfInterest)
+% 
+% %% 6. Plot derived and fitted parameters
+% 
+% % Provide a directory to save figures (optional)
+% saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
+% 
+% % plot fitted parameters (see s2_compareVTparam.m for comparison between visual and tactile datasets)
+% tt_plotParams(results, D.channels, D.options, saveDir); %close;
