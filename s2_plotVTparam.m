@@ -4,8 +4,10 @@ clear; close all;
 % without cross-validation
 
 % Dependency:
-% - make sure fitting results are in the folder: 
-% OR:
+% - make sure fitting results files are in the folder: 
+%    - tactile: /Volumes/server/Projects/BAIR/Data/BIDS/tactile/derivatives/modelFit/results/
+%    - visual: temporalECoG/analysis/results
+% OR, to rerun model fitting
 % - run s1_fitECoG.m to obtain fits of DN to both 
 %   individualelecs and electrodeaverages
 % - run tde_run with DN
@@ -34,5 +36,4 @@ datatype = 'individualelecs';
 %% 4. Plot
 
 saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'figure', 'compareTactVis');
-
 tt_plotTactileVisualParams(D, modelfun, saveDir)

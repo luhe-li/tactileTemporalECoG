@@ -24,7 +24,7 @@ set(gcf, 'Position', [400 800 2000 600]);
 %% Plot
 
 % Read in parameter names from json
-tmp = loadjson(fullfile(tdeRootPath, 'temporal_models', sprintf('%s.json', func2str(modelfun))));
+tmp = loadjson(fullfile(tt_RootPath, 'models', sprintf('%s.json', func2str(modelfun))));
 paramNames = strsplit(tmp.params,',');
 nParams = length(paramNames); % shared between tact and vis
 
@@ -40,7 +40,7 @@ for p = 1:nParams
             errorbar(1:v_nChans, m, m-se(:,1)', se(:,2)'-m, '.','Color',clut{kk}, 'MarkerSize', 30, 'LineWidth', 2, 'LineStyle', 'none', 'CapSize', 0)
             tks = v_nChans;
 
-            % Tactile (electrodeaverages, individualelectrodes)
+         % Tactile (electrodeaverages, individualelectrodes)
         else
 
             t_nChans = size(results{kk}.params,2);
