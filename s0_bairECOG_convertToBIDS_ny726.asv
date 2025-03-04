@@ -104,7 +104,7 @@ end
 triggerChannelName = 'DC4'; % tactile amplifier
 
 % This is a list of to be excluded channels that have spikes unlike others
-exclude_inx = [8 9 81 101 102 103 110 111 127 128];
+exclude_inx = [8 9 81 101 102 103 110 111];
 
 % Specify reasons for marked as bad, e.g. spikes, elipeptic,
 % outlierspectrum, lowfreqdrift
