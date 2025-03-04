@@ -188,3 +188,42 @@ if makePlot
         xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); set(gca,'fontsize',16); 
     end 
 end
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%% END OF MANUAL SECTION %%%%%%%%%%%%%%% %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Note that the stimuli names are recoded in the correct order, where the
+% original stimulus file name is unchanged within each tsv and mat file.
+
+% From here on, everything should run automatically:
+
+% AUTOMATED EXTRACTION %%
+
+% Get trigger time points from data file
+[trigger_onsets] = bidsconvert_findtriggers(data, hdr, triggerChannel, makePlot);
+if makePlot
+    saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_found',sub_label, ses_label)), 'epsc');
+end
+
+% Generate electrode files
+[electrode_table, channel_table] = bidsconvert_getelectrodefiles(dataReadDir, hdr, triggerChannel, badChannels, badChannelsDescriptions);
+
+% Read in stimulus files
+[stimData, triggersAreMatched, runTimes] = bidsconvert_matchstimulusfiles(dataReadDir, patientID, ses_label, task_label, run_label, trigger_onsets, 1);
+if makePlot
+    saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_requested',sub_label, ses_label)), 'epsc');
+end
+
+% WRITING OF FILES %%%
+
+% Write run files
+[dataFileNames] = bidsconvert_writerunfiles(dataWriteDir, stimWriteDir, ...
+    sub_label, ses_label, task_label, acq_label, run_label, ...
+    data, hdr, stimData, channel_table, trigger_onsets);
+
+% Write session files
+bidsconvert_writesessionfiles(dataReadDir, dataWriteDir, T1WriteDir, ...
+    sub_label, ses_label, acq_label, ses_labelt1, electrode_table, dataFileNames, runTimes);
