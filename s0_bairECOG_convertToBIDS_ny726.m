@@ -30,9 +30,8 @@ task_label  = {'temporalpattern', ...
                'temporalpattern', ... 
                'temporalpattern', ... 
                'temporalpattern', ... 
-               'temporalpattern', ... 
               };              
-run_label = {'01','02','03','04','05','06'};
+run_label = {'01','02','03','04','05'};
 % NOTE: task and run labels should be noted in the order they were run!
 
 % Make plots?
@@ -59,7 +58,7 @@ makePlot = 1;
 
 %% DATA TRIM (PATIENT- and SESSION-SPECIFIC)
 
-% Only included the temporal task run. The fourth temporal task was a broken off run.
+% Only included the temporal task run. Excluded the broken-off 4th run.
 
 % Define the trigger channel name (probably a 'DC' channel, see hdr.label).
 triggerChannelName = 'DC4';
@@ -67,11 +66,15 @@ triggerChannel = find(strcmp(triggerChannelName,hdr.label));
 figure;plot(rawdata(triggerChannel,:)); 
 title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
         
-run_start = 720046; % Manually determined from plot of triggerchannel 
+run_start = 720046; % Manually determined from plot of trigger channel 
+t2 = 1326760;
+t3 = 1412250;
 run_end   = 2019390; 
 
 % Clip the data
-data = rawdata(:,run_start:run_end);
+clip1 = rawdata(:,run_start:t2);
+clip2 = rawdata(:,t3:run_end);
+data = [clip1, clip2];
 hdr.nSamples = size(data,2);
 
 % Check if we have all the triggers we want
