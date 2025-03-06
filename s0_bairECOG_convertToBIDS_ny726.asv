@@ -30,9 +30,8 @@ task_label  = {'temporalpattern', ...
                'temporalpattern', ... 
                'temporalpattern', ... 
                'temporalpattern', ... 
-               'temporalpattern', ... 
               };              
-run_label = {'01','02','03','04','05','06'};
+run_label = {'01','02','03','04','05'};
 % NOTE: task and run labels should be noted in the order they were run!
 
 % Make plots?
@@ -59,7 +58,7 @@ makePlot = 1;
 
 %% DATA TRIM (PATIENT- and SESSION-SPECIFIC)
 
-% Only included the temporal task run. The fourth temporal task was a broken off run.
+% Only included the temporal task run. Excluded the broken-off 4th run.
 
 % Define the trigger channel name (probably a 'DC' channel, see hdr.label).
 triggerChannelName = 'DC4';
@@ -67,13 +66,15 @@ triggerChannel = find(strcmp(triggerChannelName,hdr.label));
 figure;plot(rawdata(triggerChannel,:)); 
 title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
         
-run_start = 720046; % Manually determined from plot of triggerchannel 
+run_start = 720046; % Manually determined from plot of trigger channel 
 t2 = 1326760;
 t3 = 1412250;
 run_end   = 2019390; 
 
 % Clip the data
-data = rawdata(:,run_start:run_end);
+clip1 = rawdata(:,run_start:t2);
+clip2 = rawdata(:,t3:run_end);
+data = [clip1, clip2];
 hdr.nSamples = size(data,2);
 
 % Check if we have all the triggers we want
@@ -91,14 +92,13 @@ t = ((0:hdr.nSamples-1)/hdr.Fs);
 
 % Plot the raw voltage time course of each channel
 if makePlot
-    for cChan = 81:1:size(data,1) 
+    for cChan = 1:1:size(data,1) 
         figure;plot(t,data(cChan,:)); 
         title([num2str(cChan) ': ' hdr.label{cChan}]);
         xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); set(gca,'fontsize',16); 
         waitforbuttonpress; close; 
     end 
 end
-
 
 %% WRITE DOWN THE FOLLOWING
 
@@ -111,6 +111,17 @@ exclude_inx = [8 9 81 101 102 103 110 111 127 128];
 % Specify reasons for marked as bad, e.g. spikes, elipeptic,
 % outlierspectrum, lowfreqdrift
 BADCHANNELS_MANUALTABLE = [num2cell(exclude_inx)' repmat({'spikes'}, [length(exclude_inx) 1])];
+
+%% check excluded channels
+
+
+    for cChan = exclude_inx
+        figure;plot(t,data(cChan,:)); 
+        title([num2str(cChan) ': ' hdr.label{cChan}]);
+        xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); set(gca,'fontsize',16); 
+        waitforbuttonpress; close; 
+    end 
+
 
 %% CHECK THE CHANNEL SELECTIONS and save figures
 
@@ -126,7 +137,7 @@ if makePlot
 end
 
 % Plot the timeseries of all channels
-if makePlo
+if makePlot
     figure('Name', 'All channels time course');
     plot(t,data(chansToPlot,:)); xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); title('All channels timecourse'); set(gca,'fontsize',16); 
     % Get trigger time points from data file

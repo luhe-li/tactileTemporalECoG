@@ -61,7 +61,7 @@ makePlot = 1;
 % Only included the temporal task run. Excluded the broken-off 4th run.
 
 % Define the trigger channel name (probably a 'DC' channel, see hdr.label).
-triggerChannelName = 'DC4';
+triggerChannelName = 'DC2';
 triggerChannel = find(strcmp(triggerChannelName,hdr.label));
 figure;plot(rawdata(triggerChannel,:)); 
 title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
@@ -92,7 +92,7 @@ t = ((0:hdr.nSamples-1)/hdr.Fs);
 
 % Plot the raw voltage time course of each channel
 if makePlot
-    for cChan = 81:1:size(data,1) 
+    for cChan = 1:1:size(data,1) 
         figure;plot(t,data(cChan,:)); 
         title([num2str(cChan) ': ' hdr.label{cChan}]);
         xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); set(gca,'fontsize',16); 
@@ -100,14 +100,13 @@ if makePlot
     end 
 end
 
-
 %% WRITE DOWN THE FOLLOWING
 
 % Trigger channel name (probably a 'DC' channel, see hdr.label)
 triggerChannelName = 'DC4'; % tactile amplifier
 
 % This is a list of to be excluded channels that have spikes unlike others
-exclude_inx = [8 9 81 101 102 103 110 111 127 128];
+exclude_inx = [81 111 127 128];
 
 % Specify reasons for marked as bad, e.g. spikes, elipeptic,
 % outlierspectrum, lowfreqdrift
@@ -127,7 +126,7 @@ if makePlot
 end
 
 % Plot the timeseries of all channels
-if makePlo
+if makePlot
     figure('Name', 'All channels time course');
     plot(t,data(chansToPlot,:)); xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); title('All channels timecourse'); set(gca,'fontsize',16); 
     % Get trigger time points from data file
@@ -206,7 +205,7 @@ end
 % AUTOMATED EXTRACTION %%
 
 % Get trigger time points from data file
-[trigger_onsets] = bidsconvert_findtriggers(data, hdr, triggerChannel, makePlot);
+[trigger_onsets] = bidsconvert_findtriggers(data, hdr, triggerChannel, makePlot, [], [], projectName);
 if makePlot
     saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_found',sub_label, ses_label)), 'epsc');
 end
