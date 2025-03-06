@@ -66,10 +66,10 @@ triggerChannel = find(strcmp(triggerChannelName,hdr.label));
 figure;plot(rawdata(triggerChannel,:)); 
 title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
         
-run_start = 720046; % Manually determined from plot of trigger channel 
-t2 = 1326760;
-t3 = 1412250;
-run_end   = 2019390; 
+run_start = 736627; % Manually determined from plot of trigger channel 
+t2 = 1327930;
+t3 = 1414830;
+run_end   = 1993870; 
 
 % Clip the data
 clip1 = rawdata(:,run_start:t2);
@@ -106,22 +106,11 @@ end
 triggerChannelName = 'DC4'; % tactile amplifier
 
 % This is a list of to be excluded channels that have spikes unlike others
-exclude_inx = [8 9 81 101 102 103 110 111 127 128];
+exclude_inx = [81 111 127 128];
 
 % Specify reasons for marked as bad, e.g. spikes, elipeptic,
 % outlierspectrum, lowfreqdrift
 BADCHANNELS_MANUALTABLE = [num2cell(exclude_inx)' repmat({'spikes'}, [length(exclude_inx) 1])];
-
-%% check excluded channels
-
-
-    for cChan = exclude_inx
-        figure;plot(t,data(cChan,:)); 
-        title([num2str(cChan) ': ' hdr.label{cChan}]);
-        xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); set(gca,'fontsize',16); 
-        waitforbuttonpress; close; 
-    end 
-
 
 %% CHECK THE CHANNEL SELECTIONS and save figures
 
@@ -216,6 +205,9 @@ end
 % AUTOMATED EXTRACTION %%
 
 % Get trigger time points from data file
+peakOpts.minPeakHeight = 0.85;
+peakOpts.minPeakDistance = 0.5;
+
 [trigger_onsets] = bidsconvert_findtriggers(data, hdr, triggerChannel, makePlot);
 if makePlot
     saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_found',sub_label, ses_label)), 'epsc');

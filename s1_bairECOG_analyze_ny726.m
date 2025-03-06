@@ -27,7 +27,7 @@ specs.base_t      = [-0.4 -0.1]; % blank epoch windown
 specs.plot_ylim   = [-2 10];
 
 % all channels on the grid
-% specs.chan_names  = {'C'};
+specs.chan_names  = {'P','M','S'};
 % specs.subplotdims = [4 8];
 % specs.subplotidx  = 1:32;
 specs.plot_type   = 'average';

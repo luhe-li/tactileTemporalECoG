@@ -61,15 +61,15 @@ makePlot = 1;
 % Only included the temporal task run. Excluded the broken-off 4th run.
 
 % Define the trigger channel name (probably a 'DC' channel, see hdr.label).
-triggerChannelName = 'DC2';
+triggerChannelName = 'DC4';
 triggerChannel = find(strcmp(triggerChannelName,hdr.label));
 figure;plot(rawdata(triggerChannel,:)); 
 title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
         
-run_start = 720046; % Manually determined from plot of trigger channel 
-t2 = 1326760;
-t3 = 1412250;
-run_end   = 2019390; 
+run_start = 736627; % Manually determined from plot of trigger channel 
+t2 = 1327930;
+t3 = 1414830;
+run_end   = 1993870; 
 
 % Clip the data
 clip1 = rawdata(:,run_start:t2);
@@ -205,7 +205,7 @@ end
 % AUTOMATED EXTRACTION %%
 
 % Get trigger time points from data file
-[trigger_onsets] = bidsconvert_findtriggers(data, hdr, triggerChannel, makePlot, [], [], projectName);
+[trigger_onsets] = bidsconvert_findtriggers(data, hdr, triggerChannel, makePlot);
 if makePlot
     saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_found',sub_label, ses_label)), 'epsc');
 end
