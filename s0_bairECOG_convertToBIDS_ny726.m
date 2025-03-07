@@ -205,6 +205,9 @@ end
 % AUTOMATED EXTRACTION %%
 
 % Get trigger time points from data file
+peakOpts.minPeakHeight = 0.85;
+peakOpts.minPeakDistance = 0.5;
+
 [trigger_onsets] = bidsconvert_findtriggers(data, hdr, triggerChannel, makePlot);
 if makePlot
     saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_found',sub_label, ses_label)), 'epsc');
