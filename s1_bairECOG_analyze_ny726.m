@@ -11,6 +11,7 @@ subject = 'ny726';
 % bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
 
 %% plot broadband timecourses for temporal conditions
+
 savePlot = 1;
 
 session           = 'nyuecog01';
@@ -76,7 +77,7 @@ specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4',
 specs.fft_stim_t  = [0 1.8];
 bidsEcogPlotSpectra(projectDir, subject, session, task, [], [], [], specs, savePlot);
 
-%% Plot the time series and spectra for selected electrodes
+%% Plot the time series for selected electrodes
 
 clear specs;
 specs.epoch_t     = [-0.4 1.8]; % stimulus epoch window
@@ -91,3 +92,27 @@ bidsEcogPlotTrials(projectDir, subject, session, task, [], inputFolder, descript
 specs.plot_ylim   = [-2 20];
 specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
 bidsEcogPlotTrials(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); %close
+
+%% Average time series for selected electrodes, each panel per condition
+
+bidsDir     = tt_bidsRootPath;
+
+clear specs;
+specs.plot_data    = true;
+specs.plot_smooth  = 1; % could try some other values
+specs.epoch_t      = [-0.4, 1.8]; % stimulus epoch window
+specs.base_t       = [-0.4 -0.1]; % blank epoch window
+specs.chan_names  = {'M'};
+specs.stim_names  = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4', 'ONE-PULSE-5', 'ONE-PULSE-6'};
+[data, channels, t, srate]   = tt_prepareData(bidsDir, subject, session, task, [], inputFolder, description, specs);
+
+specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
+[data, channels, t, srate]   = tt_prepareData(bidsDir, subject, session, task, [], inputFolder, description, specs);
+
+%%
+% Generate stimulus timecourses
+[stim_ts, stim_info] = tt_generateStimulusTimecourses(specs.stim_names, t);
+
+specs.average_elecs = true;
+%%
+tt_plotData(data, channels, t, specs, savePlot)
