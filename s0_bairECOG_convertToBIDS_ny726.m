@@ -114,7 +114,7 @@ BADCHANNELS_MANUALTABLE = [num2cell(exclude_inx)' repmat({'spikes'}, [length(exc
 
 %% CHECK THE CHANNEL SELECTIONS and save figures
 
-%% [1] Look at spectra without excluding ANY channels:
+%% [1] Look at spectrzxa without excluding ANY channels:
 badChannels = [];
 
 % Generate spectral plot; check command window output for outliers; 
