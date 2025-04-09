@@ -6,13 +6,13 @@ subject = 'ny726';
 % bidsEcogRereference(projectDir, subject);
  
 %% extract broadband (do it once)
-outputFolder      = 'ECoGBroadband_exclude110Hz';
-bands             = [[70 80]; [80 90]; [120 130]; [130 140]; [160 170]; [170 180]; [180 190]];
-bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
-
-outputFolder      = 'ECoGBroadband_include110Hz';
-bands             = [[70 80]; [80 90]; [110 120]; [120 130]; [130 140]; [160 170]; [170 180]; [180 190]];
-bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+% outputFolder      = 'ECoGBroadband_exclude110Hz';
+% bands             = [[70 80]; [80 90]; [90, 100]; [120 130]; [130 140]; [160 170]; [170 180]; [180 190]];
+% bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+% 
+% outputFolder      = 'ECoGBroadband_include110Hz';
+% bands             = [[70 80]; [80 90]; [90, 100]; [100 110]; [110 120]; [120 130]; [130 140]; [160 170]; [170 180]; [180 190]];
+% bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
 
 %% plot broadband timecourses for temporal conditions
 
@@ -32,7 +32,7 @@ specs.epoch_t     = [-0.4 1.8]; % stimulus epoch window
 specs.base_t      = [-0.4 -0.1]; % blank epoch window
 specs.plot_ylim   = [-2 20];
 
-% all channels on the grid
+% all channels on the gri
 % specs.subplotdims = [4 8];
 % specs.subplotidx  = 1:32;
 specs.plot_type   = 'average';
@@ -92,6 +92,35 @@ bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, descrip
 specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
 specs.fft_stim_t  = [0 1.8];
 bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot);
+
+%% plot broadband spectra of CAR
+
+inputFolder       = 'ECoGCAR';
+description       = 'reref';
+
+clear specs;
+specs.epoch_t     = [-1 2]; % stimulus epoch window
+specs.fft_blank_t = [-0.8 -0.1]; % fft blank epoch window
+% specs.fft_w       = 0.4;
+% specs.fft_ov      = 0.1;
+% specs.plot_ylim   = [10^-3 10^3];
+
+specs.chan_names  = {'V','W','Y','Z'}; % First half of electrodes 
+specs.stim_names  = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4', 'ONE-PULSE-5', 'ONE-PULSE-6'};
+specs.fft_stim_t  = [0 1.2];
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot);
+specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
+specs.fft_stim_t  = [0 1.8];
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot);
+
+specs.chan_names  = {'H','M','P','R','S'}; % Second half of electrods
+specs.stim_names  = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4', 'ONE-PULSE-5', 'ONE-PULSE-6'};
+specs.fft_stim_t  = [0 1.2];
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot);
+specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
+specs.fft_stim_t  = [0 1.8];
+bidsEcogPlotSpectra(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot);
+
 
 %% plot ERP time courses to check *onsets* 
 
@@ -176,3 +205,9 @@ bidsEcogPlotTrials(projectDir, subject, session, task, [], inputFolder, descript
 % specs.average_elecs = true;
 % %%
 % tt_plotData(data, channels, t, specs, savePlot)
+
+
+
+
+
+
