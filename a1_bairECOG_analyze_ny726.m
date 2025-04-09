@@ -2,22 +2,27 @@
 projectDir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile'; 
 subject = 'ny726';
 
+addpath(genpath('/Users/luhe/Documents/GitHub/fieldtrip/fileio/'))
+addpath(genpath('/Users/luhe/Documents/GitHub/fieldtrip/utilities/'))
+addpath(genpath(fullfile(pwd, 'func')))
+
 %% common average reference (do it once)
 % bidsEcogRereference(projectDir, subject);
- 
+
 %% extract broadband (do it once)
-% outputFolder      = 'ECoGBroadband_exclude110Hz';
-% bands             = [[70 80]; [80 90]; [90, 100]; [120 130]; [130 140]; [160 170]; [170 180]; [180 190]];
+outputFolder      = 'ECoGBroadband_include110Hz';
+bands             = [[70 80]; [80 90]; [90 100]; [100 110]; [130 140]; [140 150]; [150 160]];
 % bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
-% 
-% outputFolder      = 'ECoGBroadband_include110Hz';
-% bands             = [[70 80]; [80 90]; [90, 100]; [100 110]; [110 120]; [120 130]; [130 140]; [160 170]; [170 180]; [180 190]];
+bidsEcogBroadbandPlotAllchannels(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+
+outputFolder      = 'ECoGBroadband_exclude110Hz';
+bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]];
 % bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+bidsEcogBroadbandPlotAllchannels(projectDir, subject, [], [], [], bands, [], [], outputFolder);
 
 %% plot broadband timecourses for temporal conditions
 
 savePlot = 1;
-
 session           = 'nyuecog01';
 task              = 'temporalpattern';
 

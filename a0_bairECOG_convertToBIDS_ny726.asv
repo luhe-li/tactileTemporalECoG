@@ -105,27 +105,31 @@ t = ((0:hdr.nSamples-1)/hdr.Fs);
 threshold = 200;
 exclude_inx = [];
 for cChan = 1:size(data, 1)
-    if mean(data(cChan, :)) > threshold || mean(data(cChan, :)) <- threshold || max(data(cChan,:))>1500
+    if mean(data(cChan, :)) > threshold || mean(data(cChan, :)) <- threshold
         exclude_inx = [exclude_inx, cChan];
     end
 end
 
 % Manually add bad channels
-manual_exclude_inx = [32,33,81,93,109,125];
-exclude_inx = sort(unique([exclude_inx, manual_exclude_inx]));
-% 
-% % Check bad channels
+manual_exclude_inx = [81, 128];
+exclude_inx = [exclude_inx, manual_exclude_inx];
+%%
+% Check bad channels
 for cChan = 1:1:numel(exclude_inx)
     exc_ch = exclude_inx(cChan);
     figure;plot(t,data(exc_ch,:));
     title([num2str(exc_ch) ': ' hdr.label{exc_ch}]);
     xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); set(gca,'fontsize',16);
+    waitforbuttonpress; close;
 end
 
 %% WRITE DOWN THE FOLLOWING
 
 % Trigger channel name (probably a 'DC' channel, see hdr.label)
 triggerChannelName = 'DC4'; % tactile amplifier
+
+% This is a list of to be excluded channels that have spikes unlike others
+% exclude_inx = [81 111 127 128];
 
 % Specify reasons for marked as bad, e.g. spikes, elipeptic,
 % outlierspectrum, lowfreqdrift
