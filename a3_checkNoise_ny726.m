@@ -1,0 +1,304 @@
+
+projectDir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile'; 
+subject = 'ny726';
+makePlot = 1;
+
+addpath(genpath('/Users/luhe/Documents/GitHub/fieldtrip/fileio/'))
+addpath(genpath('/Users/luhe/Documents/GitHub/fieldtrip/utilities/'))
+addpath(genpath(fullfile(pwd, 'func')))
+
+%% PREPROCESSING
+
+% Define paths and BIDS specs %%
+patientID   = 726; % Specify patient's raw folder name here
+RawDataDir  = '/Volumes/server/Projects/BAIR/Data/Raw/ECoG/tactile/';
+BIDSDataDir = '/Volumes/server/Projects/BAIR/Data/BIDS/';
+
+% BIDS specs: assuming defaults for a first session, full visual set:
+projectName = 'tactile';
+sub_label   = 'ny726'; % Specify patient's code name here;
+ses_label   = 'nyuecog01';
+ses_labelt1 = 'som3t01';
+acq_label   = 'clinical';
+task_label  = {'temporalpattern', ...            
+               'temporalpattern', ... 
+               'temporalpattern', ... 
+               'temporalpattern', ... 
+               'temporalpattern', ... 
+              };              
+run_label = {'01','02','03','04','05'};
+% NOTE: task and run labels should be noted in the order they were run!
+
+% Define paths
+[dataReadDir, dataWriteDir, stimWriteDir, T1WriteDir, preprocDir] = bidsconvert_getpaths(patientID, RawDataDir, ...
+    BIDSDataDir, projectName, sub_label, ses_label, ses_labelt1);
+
+% Read ECoG data
+[rawdata, hdr] = bidsconvert_readecogdata(dataReadDir, ses_label);
+
+%% check visual triggger. Exclude the broken-off 4th run.
+
+% Define the trigger channel name (probably a 'DC' channel, see hdr.label).
+triggerChannelName = 'DC2';
+triggerChannel = find(strcmp(triggerChannelName,hdr.label));
+figure;plot(rawdata(triggerChannel,:)); 
+title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
+
+run_start = 733962; % Manually determined from plot of trigger channel 
+t2 = 1319100;
+t3 = 1414680;
+run_end   = 1993730; 
+
+% clip the data
+clip1 = rawdata(:,run_start:t2);
+clip2 = rawdata(:,t3:run_end);
+data = [clip1, clip2];
+hdr.nSamples = size(data,2);
+
+% check the data
+figure;plot(data(triggerChannel,:)/max(data(triggerChannel,:))); 
+title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
+
+% extract event onset times
+peakOpts.minPeakHeight = 0.8;
+peakOpts.minPeakProminence = 0.8;
+peakOpts.minPeakDistance = 0.05;
+
+triggers = data(triggerChannel,:);
+triggers = triggers / max(triggers);
+t = ((0:hdr.nSamples-1)/hdr.Fs);
+
+[~,trigger_onsets, widths] = findpeaks(triggers, hdr.Fs,...
+    'MinPeakHeight',peakOpts.minPeakHeight,...
+    'MinPeakProminence',peakOpts.minPeakProminence,...
+    'MinPeakDistance', peakOpts.minPeakDistance);
+
+[~,trigger_onsets_idx] = findpeaks(triggers,...
+    'MinPeakHeight',peakOpts.minPeakHeight,...
+    'MinPeakProminence',peakOpts.minPeakProminence,...
+    'MinPeakDistance', peakOpts.minPeakDistance);
+
+% use figure; histogram(widths(valid_index)) to check the threshold of trigger duration
+valid_index = widths < 0.02; % each trigger pulse is less than 0.02 s
+trigger_onsets = trigger_onsets(valid_index);
+trigger_onsets_idx = trigger_onsets_idx(valid_index);
+
+% Segment triggers into blocks using the gap threshold (e.g., 5 seconds)
+dt = diff(trigger_onsets);                   % Inter-trigger intervals
+block_break_indices = find(dt > 5);            % Find large gaps indicating block boundaries
+numBlocks = length(block_break_indices) + 1;   % Number of blocks is one more than the number of breaks
+
+% Split trigger_onsets into blocks
+[blocks_idx, blocks]= deal(cell(numBlocks, 1));
+startIdx = 1;
+for i = 1:length(block_break_indices)
+    endIdx = block_break_indices(i);
+    blocks{i} = trigger_onsets(startIdx:endIdx);
+    blocks_idx{i} = trigger_onsets_idx(startIdx:endIdx);
+    startIdx = endIdx + 1;
+end
+blocks{numBlocks} = trigger_onsets(startIdx:end);
+blocks_idx{numBlocks} = trigger_onsets_idx(startIdx:end);
+
+% % Plot first 3 and last 3 trials for each block in a 5x6 grid
+% figure('Position', [100 100 1500 1000]);
+% 
+% % Calculate samples for 1.5s epoch
+% epoch_length = 0.1; % seconds
+% samples_per_epoch = round(epoch_length * hdr.Fs);
+% epoch_time = (-10:samples_per_epoch-1)/hdr.Fs;
+% 
+% for block = 1:numBlocks
+%     % Get first 3 and last 3 trigger indices for this block
+%     block_triggers = blocks_idx{block};
+%     first_three = block_triggers(1:3);
+%     last_three = block_triggers(end-2:end);
+%     all_triggers = [first_three; last_three];
+% 
+%     % Plot each trial in its own subplot
+%     for trial = 1:6
+%         subplot(5, 6, (block-1)*6 + trial)
+%         trigger_sample = all_triggers(trial);
+% 
+%         if trigger_sample + samples_per_epoch <= size(data, 2)
+%             epoch_data = data(triggerChannel, (trigger_sample-10):trigger_sample+samples_per_epoch-1);
+%             plot(epoch_time, epoch_data, 'k-', 'LineWidth', 1)
+% 
+%             if trial <= 3
+%                 title(sprintf('Block %d\nFirst Trial %d', block, trial))
+%             else
+%                 title(sprintf('Block %d\nLast Trial %d', block, trial-3))
+%             end
+% 
+%             xlabel('Time (s)')
+%             ylabel('Amplitude')
+%             grid on
+%         end
+%     end
+% end
+% 
+% sgtitle('First Channel Activity Around Events (First 3 and Last 3 Trials per Block)')
+
+% Remove first trigger from each block
+for i = 1:numBlocks
+    blocks{i} = blocks{i}(2:end);  % Remove first trigger
+    blocks_idx{i} = blocks_idx{i}(2:end); % Remove first trigger index
+end
+
+% Display block counts after removing first triggers
+fprintf('\nTrigger counts per block AFTER removing first triggers:\n');
+for i = 1:numBlocks
+    fprintf('Block %d: %d triggers\n', i, numel(blocks{i}));
+end
+
+% Recombine blocks into single vector
+trigger_onsets = horzcat(blocks{:});
+trigger_onsets_idx = horzcat(blocks_idx{:});
+fprintf('\nTotal triggers after removing first triggers: %d\n', numel(trigger_onsets));
+
+
+%% channel selection
+
+% Define time axis (in seconds). First time point = 0 (this is assumed by
+% the function we used to detect triggers below, and also in fieldtrip).
+t = ((0:hdr.nSamples-1)/hdr.Fs); 
+
+% Automatic identification
+% Identify channels with values exceeding the threshold
+threshold = 200;
+exclude_inx = [];
+for cChan = 1:size(data, 1)
+    if mean(data(cChan, :)) > threshold || mean(data(cChan, :)) <- threshold || max(data(cChan,:))>1500
+        exclude_inx = [exclude_inx, cChan];
+    end
+end
+
+% Manually add bad channels
+manual_exclude_inx = [32,33,81,93,109,125];
+exclude_inx = sort(unique([exclude_inx, manual_exclude_inx]));
+
+% % Check bad channels
+% for cChan = 1:1:numel(exclude_inx)
+%     exc_ch = exclude_inx(cChan);
+%     figure;plot(t,data(exc_ch,:));
+%     title([num2str(exc_ch) ': ' hdr.label{exc_ch}]);
+%     xlabel('Time (s)'); ylabel('Raw amplitude (microV)'); set(gca,'fontsize',16);
+% end
+
+% Trigger channel name (probably a 'DC' channel, see hdr.label)
+triggerChannelName = 'DC2'; % visual trigger
+
+% Specify reasons for marked as bad, e.g. spikes, elipeptic,
+% outlierspectrum, lowfreqdrift
+BADCHANNELS_MANUALTABLE = [num2cell(exclude_inx)' repmat({'spikes'}, [length(exclude_inx) 1])];
+badChannels = cell2mat(BADCHANNELS_MANUALTABLE(:,1));
+badChannelsDescriptions = BADCHANNELS_MANUALTABLE(:,2);
+
+% Generate electrode files
+[electrode_table, channel_table] = bidsconvert_getelectrodefiles(dataReadDir, hdr, triggerChannel, badChannels, badChannelsDescriptions);
+
+%% read in stimulus files
+
+% READ IN relevant data files %%%%%%%%%%%%%%%%%%
+
+%   - stimulus log files generated by stimulus code
+stimDir = fullfile(dataReadDir, 'stimdata');
+stimMatFiles = [dir(fullfile(stimDir, sprintf('sub-*%d*%s*.mat', patientID, ses_label))) dir(fullfile(stimDir, sprintf('sub-*%d*%s*.mat', patientID, upper(ses_label))))];
+stimTSVFiles = [dir(fullfile(stimDir, sprintf('sub-*%d*%s*.tsv', patientID, ses_label))) dir(fullfile(stimDir, sprintf('sub-*%d*%s*.tsv', patientID, upper(ses_label))))];
+
+% CHECK: Do we have all the stimfiles?
+fprintf('[%s] Asserting that we have all the stimFiles \n', mfilename);
+assert(isequal(length(stimMatFiles), length(run_label)))
+assert(isequal(length(stimTSVFiles), length(run_label)))
+
+% NOTE: It's important to read the StimFiles in in the correct order.
+% Because the logfiles are copied over, we can't assume that
+% stimFiles(ii).date is correct. Instead, we sort them based on the field
+% "experimentDateandTime" in params saved out by the stimulus code.
+
+% Read the stimfiles
+clear stimData;
+fprintf('[%s] Reading in the following stimFiles: \n', mfilename);
+runTimes = [];
+for ii = 1:length(stimMatFiles)
+    stimData(ii) = load([stimDir filesep stimMatFiles(ii).name]);
+    disp(stimData(ii).fname)
+    runTimes{ii} = stimData(ii).params.experimentDateandTime;
+end
+% Sort the stimfiles, count how many triggers were requested
+[~, runIndex] = sort(runTimes);
+fprintf('[%s] Sorting runs in recorded order. New run order is: \n', mfilename);
+stimData_sorted = stimData(runIndex);
+runTimes_sorted = runTimes(runIndex);
+requestedTriggerCount = 0;
+for ii = 1:length(stimMatFiles)
+    disp([stimData_sorted(ii).fname])
+    trigSeq = stimData_sorted(ii).stimulus.trigSeq;
+    % Remove first and last trigger (block start and end)
+    trigSeq = trigSeq(2:end-1);
+    num_triggers = length(find(trigSeq));
+    requestedTriggerCount = requestedTriggerCount+num_triggers;
+end
+
+% CHECK: Does the number of requested triggers match the number of triggers
+% that were detected in the trigger channel?
+fprintf('[%s] Asserting that number of triggers match requested number \n', mfilename);
+foundTriggerCount = length(trigger_onsets);
+if isequal(requestedTriggerCount, foundTriggerCount)
+    triggersAreMatched = 1;
+else
+    triggersAreMatched = 0;
+    warning('[%s] Number of triggers does not match requested number!!! \n Triggers in data = %d, Triggers requested = %d. \n Please double check the cause of this discrepancy before continuing.', mfilename, foundTriggerCount, requestedTriggerCount);
+end
+
+stimData = stimData_sorted;
+runTimes = runTimes_sorted;
+
+if makePlot
+    saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_requested',sub_label, ses_label)), 'epsc');
+end
+
+%% writing files
+
+% Write run files
+[dataFileNames] = bidsconvert_writerunfiles(dataWriteDir, stimWriteDir, ...
+    sub_label, ses_label, task_label, acq_label, run_label, ...
+    data, hdr, stimData, channel_table, trigger_onsets);
+
+% Write session files
+bidsconvert_writesessionfiles(dataReadDir, dataWriteDir, T1WriteDir, ...
+    sub_label, ses_label, acq_label, ses_labelt1, electrode_table, dataFileNames, runTimes);
+
+%% common average reference (do it once)
+bidsEcogRereference(projectDir, subject);
+
+%% CHECK RAW data
+
+bidsRootPath = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
+dataPath = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
+subject           = 'ny726';
+session           = 'nyuecog01';
+task              = 'temporalpattern';
+[data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], task);
+
+specs.epoch_t     = [-0.4 1.8];  % stimulus epoch window
+specs.base_t      = [-0.4 -0.1]; % blank epoch window
+specs.plot_ylim   = [-2 20];
+
+chanidx1 = find(cellfun(@(x) ~isempty(x), strfind(channels.name, 'M11')));
+chanidx2 = find(cellfun(@(x) ~isempty(x), strfind(channels.name, 'M12')));
+chanidx3 = find(cellfun(@(x) ~isempty(x), strfind(channels.name, 'S13')));
+
+figure, plot(data(chanidx1, :))
+
+[epochs, t] = ecog_makeEpochs(data, events.onset, specs.epoch_t, channels.sampling_frequency(1));
+
+% plot the mean across all epochs
+figure, 
+plot(t, mean(epochs(:,:,chanidx1), 2)); hold on
+plot(t, mean(epochs(:,:,chanidx2), 2)); 
+plot(t, mean(epochs(:,:,chanidx3), 2)); 
+
+xline(0); yline(0)
+set(gca, 'XTick', -2:1/110:1, 'XGrid','on')
+xlim([-30 250]/1000)
