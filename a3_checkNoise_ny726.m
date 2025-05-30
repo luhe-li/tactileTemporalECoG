@@ -270,6 +270,7 @@ bidsconvert_writesessionfiles(dataReadDir, dataWriteDir, T1WriteDir, ...
     sub_label, ses_label, acq_label, ses_labelt1, electrode_table, dataFileNames, runTimes);
 
 %% common average reference (do it once)
+
 bidsEcogRereference(projectDir, subject);
 
 %% CHECK RAW data
@@ -279,26 +280,216 @@ dataPath = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
 subject           = 'ny726';
 session           = 'nyuecog01';
 task              = 'temporalpattern';
+
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], task);
 
 specs.epoch_t     = [-0.4 1.8];  % stimulus epoch window
 specs.base_t      = [-0.4 -0.1]; % blank epoch window
 specs.plot_ylim   = [-2 20];
 
-chanidx1 = find(cellfun(@(x) ~isempty(x), strfind(channels.name, 'M11')));
-chanidx2 = find(cellfun(@(x) ~isempty(x), strfind(channels.name, 'M12')));
-chanidx3 = find(cellfun(@(x) ~isempty(x), strfind(channels.name, 'S13')));
+% group electrode by regions
+regions = {'V','W','Y','Z','H','M','P','R','S'};
 
-figure, plot(data(chanidx1, :))
-
+% epoch: time series x trial x electrode
 [epochs, t] = ecog_makeEpochs(data, events.onset, specs.epoch_t, channels.sampling_frequency(1));
 
-% plot the mean across all epochs
-figure, 
-plot(t, mean(epochs(:,:,chanidx1), 2)); hold on
-plot(t, mean(epochs(:,:,chanidx2), 2)); 
-plot(t, mean(epochs(:,:,chanidx3), 2)); 
+%%
+% plot each region separately
+trial_slc = 1;
+for r = 1:length(regions)
+    % select electrodes for this region
+    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+    % plot all electrode of this region for one trial
+    if ~isempty(chanidx)
+        figure('Position', [100 100 1600 1200]); hold on
+        set(gca, 'FontSize', 15)
+        plot(t, squeeze(epochs(:,trial_slc,chanidx)),'LineWidth',1); 
+        xline(0); yline(0)
+        set(gca, 'XGrid','on')
+        set(gca, 'XTick', -0.4:0.1:1.8) % Set x grid at 0.1s intervals
+        title(['Region ' regions{r} ' - Single trial response for each electrode'])
+        xlabel('Time (s)')
+        ylabel('Amplitude (μV)')
+    end
 
-xline(0); yline(0)
-set(gca, 'XTick', -2:1/110:1, 'XGrid','on')
-xlim([-30 250]/1000)
+    % plot average across trials for each electrode in this region
+    figure('Position', [100 100 1600 1200]); hold on
+    set(gca, 'FontSize', 15)
+    plot(t, squeeze(mean(epochs(:,:,chanidx), 2)),'LineWidth',1); 
+    xline(0); yline(0)
+    set(gca, 'XGrid','on')
+    set(gca, 'XTick', -0.4:0.1:1.8) % Set x grid at 0.1s intervals
+    title(['Region ' regions{r} ' - Trial-averaged response for each electrode'])
+    xlabel('Time from onsets(s)')
+    ylabel('Amplitude (μV)')
+        
+    % Save figures
+    figureDir = fullfile(bidsRootPath, 'derivatives', 'ECoGFigures', ['sub-' subject], 'CAR_figures');
+    if ~exist(figureDir, 'dir')
+        mkdir(figureDir);
+    end
+    saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-singletrial.png', subject, session, task, regions{r})))
+    saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged.png', subject, session, task, regions{r})))
+
+end
+
+%% align trials by trial offset
+
+% Calculate event offsets based on trial type
+offsets = zeros(size(events.onset));
+for i = 1:length(events.trial_name)
+    if contains(events.trial_name{i}, 'TWO-PULSE')
+        % For two pulse trials, offset = onset + 2*duration + ISI 
+        offsets(i) = events.onset(i) + 2*events.duration(i) + events.ISI(i);
+    else
+        % For one pulse trials, offset = onset + duration
+        offsets(i) = events.onset(i) + events.duration(i);
+    end
+end
+
+% Make epochs aligned to offset
+[epochs_offset, t_offset] = ecog_makeEpochs(data, offsets, specs.epoch_t, channels.sampling_frequency(1));
+
+% Plot offset-aligned epochs for each region
+for r = 1:length(regions)
+    % select electrodes for this region
+    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+    
+    if ~isempty(chanidx)
+        % Plot trial-averaged offset-aligned response
+        figure('Position', [100 100 1600 1200]); hold on
+        set(gca, 'FontSize', 15)
+        plot(t_offset, squeeze(mean(epochs_offset(:,:,chanidx), 2)),'LineWidth',1);
+        xline(0); yline(0)
+        set(gca, 'XGrid','on')
+        set(gca, 'XTick', -0.4:0.1:1.8)
+        title(['Region ' regions{r} ' - Trial-averaged response aligned to offset'])
+        xlabel('Time from offset (s)')
+        ylabel('Amplitude (μV)')
+        
+        % Save figure
+        saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged-offsetaligned.png', subject, session, task, regions{r})))
+    end
+end
+
+%% check raw data after filtering out carrier frequence (110 Hz) and line Frequency (60 Hz)
+
+% Apply low-pass filter under 100 Hz with notch at 60 Hz to remove line noise
+fprintf('Applying low-pass filter under 100 Hz with notch at 60 Hz...\n');
+
+srate = channels.sampling_frequency(1); % Get sampling rate
+
+% First apply notch filter at 60 Hz
+notchFilt = designfilt('bandstopiir', ...
+    'FilterOrder', 4, ...
+    'HalfPowerFrequency1', 59, ...
+    'HalfPowerFrequency2', 61, ...
+    'SampleRate', srate);
+
+% Then design low-pass filter under 100 Hz
+lpFilt = designfilt('lowpassfir', ...
+    'PassbandFrequency', 95, ... % Pass everything below 95 Hz
+    'StopbandFrequency', 100, ... % Stop at 100 Hz
+    'PassbandRipple', 0.1, ...
+    'StopbandAttenuation', 60, ...
+    'SampleRate', srate);
+
+% Apply filters to data
+data_notch = filtfilt(notchFilt, double(data)')'; % First remove 60 Hz
+data_filtered = filtfilt(lpFilt, data_notch')'; % Then apply lowpass
+
+% Make epochs with filtered data
+[epochs_filtered, t] = ecog_makeEpochs(data_filtered, events.onset, specs.epoch_t, srate);
+
+% Plot filtered data for each region
+for r = 1:length(regions)
+    % Select electrodes for this region
+    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+    
+    if ~isempty(chanidx)
+        % Plot trial-averaged filtered response
+        figure('Position', [100 100 1600 1200]); hold on
+        set(gca, 'FontSize', 15)
+        plot(t, squeeze(mean(epochs_filtered(:,:,chanidx), 2)), 'LineWidth', 1);
+        xline(0); yline(0)
+        set(gca, 'XGrid', 'on')
+        set(gca, 'XTick', -0.4:0.1:1.8)
+        title(['Region ' regions{r} ' - Trial-averaged response (Low-pass < 100 Hz, notch at 60 Hz)'])
+        xlabel('Time (s)')
+        ylabel('Amplitude (μV)')
+        
+        % Save figure
+        saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged-filtered.png', subject, session, task, regions{r})))
+    end
+end
+
+
+% Make epochs with filtered data aligned to offset
+[epochs_filtered_offset, t_offset] = ecog_makeEpochs(data_filtered, offsets, specs.epoch_t, srate);
+
+% Plot filtered offset-aligned data for each region
+for r = 1:length(regions)
+    % Select electrodes for this region
+    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+    
+    if ~isempty(chanidx)
+        % Plot trial-averaged filtered offset-aligned response
+        figure('Position', [100 100 1600 1200]); hold on
+        set(gca, 'FontSize', 15)
+        plot(t_offset, squeeze(mean(epochs_filtered_offset(:,:,chanidx), 2)), 'LineWidth', 1);
+        xline(0); yline(0)
+        set(gca, 'XGrid', 'on')
+        set(gca, 'XTick', -0.4:0.1:1.8)
+        title(['Region ' regions{r} ' - Trial-averaged response aligned to offset (Low-pass < 100 Hz, notch at 60 Hz)'])
+        xlabel('Time from offset (s)')
+        ylabel('Amplitude (μV)')
+        
+        % Save figure
+        saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged-filtered-offsetaligned.png', subject, session, task, regions{r})))
+    end
+end
+
+
+
+
+% 
+% %% EXTRACT BROADBAND (do it once)
+% 
+% outputFolder      = 'ECoGBroadband_include110Hz';
+% bands             = [[70 80]; [80 90]; [90 100]; [100 110]; [130 140]; [140 150]; [150 160]; [160 170]];
+% % bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+% bidsEcogBroadbandPlotAllchannels(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+% 
+% outputFolder      = 'ECoGBroadband_exclude110Hz';
+% bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]; [160 170]];
+% % bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+% bidsEcogBroadbandPlotAllchannels(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+% 
+% %% plot broadband timecourses for temporal conditions
+% 
+% savePlot = 1;
+% session           = 'nyuecog01';
+% task              = 'temporalpattern';
+% 
+% % Specify one of the three preprocessed data here:
+% inputFolder       = 'ECoGBroadband_exclude110Hz'; 
+% description       = 'broadband';
+% 
+% clear specs;
+% specs.epoch_t     = [-0.4 1.8]; % stimulus epoch window
+% specs.base_t      = [-0.4 -0.1]; % blank epoch window
+% specs.plot_ylim   = [-2 20];
+% 
+% specs.plot_type   = 'average';
+% 
+% specs.chan_names  = {'V','W','Y','Z'}; % First half of electrodes
+% specs.stim_names  = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4', 'ONE-PULSE-5', 'ONE-PULSE-6'};
+% bidsEcogPlotTrials(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); %close
+% specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
+% bidsEcogPlotTrials(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); %close
+% 
+% specs.chan_names  = {'H','M','P','R','S'}; % Second half of electrods
+% specs.stim_names  = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4', 'ONE-PULSE-5', 'ONE-PULSE-6'};
+% bidsEcogPlotTrials(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); %close
+% specs.stim_names  = {'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
+% bidsEcogPlotTrials(projectDir, subject, session, task, [], inputFolder, description, specs, savePlot); %close
