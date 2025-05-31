@@ -198,7 +198,8 @@ for trial = 1:num_trials
     
     sgtitle(sprintf('Trial %d Response by Region', trial), 'FontSize', 14)
 end
-%% Plot power spectrum for last 3 trials
+
+%% Plot power spectrum for last 5 trials
 
 % Create full screen figure for power spectra
 figure('Position', get(0, 'ScreenSize'));
@@ -220,8 +221,8 @@ for r = 1:length(regions)
         
         % Calculate and plot power spectrum for each electrode
         for ch = 1:length(chanidx)
-            % Get data for this electrode across last 3 trials
-            signal = squeeze(epoched_data(:,end-2:end,chanidx(ch)));
+            % Get data for this electrode across last 5 trials
+            signal = squeeze(epoched_data(:,end-4:end,chanidx(ch)));
             signal = signal(:)'; % Concatenate trials
             
             % Calculate power spectrum using Welch's method
@@ -240,4 +241,4 @@ for r = 1:length(regions)
     end
 end
 
-sgtitle('Power Spectrum by Region (Last 3 Trials)', 'FontSize', 14)
+sgtitle('Power Spectrum by Region (Last 5 Trials)', 'FontSize', 14)
