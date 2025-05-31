@@ -36,6 +36,9 @@ run_label = {'01','02','03','04','05'};
 % Read ECoG data
 [rawdata, hdr] = bidsconvert_readecogdata(dataReadDir, ses_label);
 
+% Load channels from the first session (shared across sessions)
+[~, channels, ~, ~, ~] = bidsEcogReadFiles(projectDir, subject, ses_label, task_label{1}, run_label{1});
+
 %%
 % Define the trigger channel name (probably a 'DC' channel, see hdr.label).
 triggerChannelName = 'DC2';
@@ -120,9 +123,18 @@ end
 
 sgtitle('Last 12 Trials in Broken Block')
 
+%% do CAR on the broken block data, all trials
+
+% get excluded channels as a3
+badchannels = [32    33    81    93   102   103   109   110   111   125   127   128   129   130   131   132   133];
+
+
+% do CAR
+[data_reref, channels_reref, group_indices, group_names] = ecog_performCAR(brokenblock_data, channels);           
+
 % Select last 5 trials
-last_ten_onsets = trigger_onsets(end-9:end);
-last_ten_onsets_idx = trigger_onsets_idx(end-9:end);
+last_five_onsets = trigger_onsets(end-4:end);
+last_five_onsets_idx = trigger_onsets_idx(end-4:end);
 
 % Define epoch window
 epoch_t = [-0.4 1.8];
@@ -132,17 +144,17 @@ samples_per_epoch = diff(epoch_samples) + 1;
 % Initialize data matrix (time x trial x electrode)
 num_timepoints = samples_per_epoch;
 num_trials = 5;
-num_channels = size(brokenblock_data, 1);
+num_channels = size(data_reref, 1);
 epoched_data = zeros(num_timepoints, num_trials, num_channels);
 
 % Extract epochs
 for trial = 1:num_trials
-    onset_idx = last_ten_onsets_idx(trial);
+    onset_idx = last_five_onsets_idx(trial);
     start_idx = onset_idx + epoch_samples(1);
     end_idx = onset_idx + epoch_samples(2);
     
-    if start_idx > 0 && end_idx <= size(brokenblock_data, 2)
-        epoched_data(:,trial,:) = brokenblock_data(:,start_idx:end_idx)';
+    if start_idx > 0 && end_idx <= size(data_reref, 2)
+        epoched_data(:,trial,:) = data_reref(:,start_idx:end_idx)';
     end
 end
 
@@ -151,21 +163,46 @@ t = linspace(epoch_t(1), epoch_t(2), num_timepoints);
 
 % group electrode by regions
 regions = {'V','W','Y','Z','H','M','P','R','S'};
-% plot each region separately
+
+% Create full screen figure
+figure('Position', get(0, 'ScreenSize')); 
+
+% Calculate subplot layout
+num_regions = length(regions);
+num_cols = 5; % 5 trials
+num_rows = num_regions;
+
+% Plot each region and trial
 for r = 1:length(regions)
     % select electrodes for this region
     chanidx = find(cellfun(@(x) ~isempty(x), strfind(brokenblock_hdr.label, regions{r})));
     
     if ~isempty(chanidx)
-        % Plot trial-averaged response for all electrodes in this region
-        figure('Position', [100 100 1600 1200]); hold on
-        set(gca, 'FontSize', 15)
-        plot(t, squeeze(mean(epoched_data(:,:,chanidx), 2)), 'LineWidth', 1);
-        xline(0); yline(0)
-        set(gca, 'XGrid', 'on')
-        set(gca, 'XTick', -0.4:0.1:1.8)
-        title(['Region ' regions{r} ' - Trial-averaged response'])
-        xlabel('Time (s)')
-        ylabel('Amplitude')
+        % Plot each trial separately
+        for trial = 1:num_trials
+            subplot(num_rows, num_cols, (r-1)*num_cols + trial)
+            hold on
+            
+            % Plot each electrode's response for this trial
+            plot(t, squeeze(epoched_data(:,trial,chanidx)), 'LineWidth', 1);
+            xline(0); yline(0)
+            grid on
+            
+            % Only show x label on bottom row
+            if r == length(regions)
+                xlabel('Time (s)')
+            end
+            
+            % Only show y label on first column
+            if trial == 1
+                ylabel(['Region ' regions{r}])
+            end
+            
+            title(sprintf('Trial %d', trial))
+            set(gca, 'XTick', -0.4:0.4:1.8)
+            set(gca, 'FontSize', 10)
+        end
     end
 end
+
+sgtitle('Last 5 Trials by Region', 'FontSize', 14)

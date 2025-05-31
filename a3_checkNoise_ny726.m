@@ -1,3 +1,4 @@
+clear
 
 projectDir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile'; 
 subject = 'ny726';
@@ -258,7 +259,7 @@ if makePlot
     saveas(gcf, fullfile(preprocDir, 'figures', 'bidsconversion', sprintf('%s-%s-triggers_requested',sub_label, ses_label)), 'epsc');
 end
 
-%% writing files
+%% writing files (do it once)
 
 % Write run files
 [dataFileNames] = bidsconvert_writerunfiles(dataWriteDir, stimWriteDir, ...
@@ -273,7 +274,7 @@ bidsconvert_writesessionfiles(dataReadDir, dataWriteDir, T1WriteDir, ...
 
 bidsEcogRereference(projectDir, subject);
 
-%% CHECK RAW data
+%% CHECK CAR data
 
 bidsRootPath = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
 dataPath = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
@@ -283,18 +284,18 @@ task              = 'temporalpattern';
 
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], task);
 
-specs.epoch_t     = [-0.4 1.8];  % stimulus epoch window
-specs.base_t      = [-0.4 -0.1]; % blank epoch window
+align_onset_epoch_t     = [-0.4 1.8];  % stimulus epoch window
+align_offset_epoch_t     = [-1 1];  % stimulus epoch window
 specs.plot_ylim   = [-2 20];
 
 % group electrode by regions
 regions = {'V','W','Y','Z','H','M','P','R','S'};
 
 % epoch: time series x trial x electrode
-[epochs, t] = ecog_makeEpochs(data, events.onset, specs.epoch_t, channels.sampling_frequency(1));
+[epochs, t] = ecog_makeEpochs(data, events.onset, align_onset_epoch_t, channels.sampling_frequency(1));
 
-%%
-% plot each region separately
+%% plot: align trials by trial onset
+
 trial_slc = 1;
 for r = 1:length(regions)
     % select electrodes for this region
@@ -306,7 +307,7 @@ for r = 1:length(regions)
         plot(t, squeeze(epochs(:,trial_slc,chanidx)),'LineWidth',1); 
         xline(0); yline(0)
         set(gca, 'XGrid','on')
-        set(gca, 'XTick', -0.4:0.1:1.8) % Set x grid at 0.1s intervals
+        set(gca, 'XTick', min(align_onset_epoch_t):0.1:max(align_onset_epoch_t))
         title(['Region ' regions{r} ' - Single trial response for each electrode'])
         xlabel('Time (s)')
         ylabel('Amplitude (μV)')
@@ -318,7 +319,7 @@ for r = 1:length(regions)
     plot(t, squeeze(mean(epochs(:,:,chanidx), 2)),'LineWidth',1); 
     xline(0); yline(0)
     set(gca, 'XGrid','on')
-    set(gca, 'XTick', -0.4:0.1:1.8) % Set x grid at 0.1s intervals
+    set(gca, 'XTick', min(align_onset_epoch_t):0.1:max(align_onset_epoch_t))
     title(['Region ' regions{r} ' - Trial-averaged response for each electrode'])
     xlabel('Time from onsets(s)')
     ylabel('Amplitude (μV)')
@@ -328,8 +329,8 @@ for r = 1:length(regions)
     if ~exist(figureDir, 'dir')
         mkdir(figureDir);
     end
-    saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-singletrial.png', subject, session, task, regions{r})))
-    saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged.png', subject, session, task, regions{r})))
+    saveas(gcf, fullfile(figureDir, sprintf('region%s_singletrial.png', regions{r})))
+    saveas(gcf, fullfile(figureDir, sprintf('region%s_avg.png', regions{r})))
 
 end
 
@@ -348,7 +349,7 @@ for i = 1:length(events.trial_name)
 end
 
 % Make epochs aligned to offset
-[epochs_offset, t_offset] = ecog_makeEpochs(data, offsets, specs.epoch_t, channels.sampling_frequency(1));
+[epochs_offset, t_offset] = ecog_makeEpochs(data, offsets, align_offset_epoch_t, channels.sampling_frequency(1));
 
 % Plot offset-aligned epochs for each region
 for r = 1:length(regions)
@@ -362,17 +363,127 @@ for r = 1:length(regions)
         plot(t_offset, squeeze(mean(epochs_offset(:,:,chanidx), 2)),'LineWidth',1);
         xline(0); yline(0)
         set(gca, 'XGrid','on')
-        set(gca, 'XTick', -0.4:0.1:1.8)
+        set(gca, 'XTick', min(align_offset_epoch_t):0.1:max(align_offset_epoch_t))
         title(['Region ' regions{r} ' - Trial-averaged response aligned to offset'])
         xlabel('Time from offset (s)')
         ylabel('Amplitude (μV)')
         
         % Save figure
-        saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged-offsetaligned.png', subject, session, task, regions{r})))
+        saveas(gcf, fullfile(figureDir, sprintf('region%s_avg_offset.png', regions{r})))
     end
 end
 
-%% check raw data after filtering out carrier frequence (110 Hz) and line Frequency (60 Hz)
+%% check randomly selected  3 consecutive trials from the first block, aligned to the onset
+
+% Randomly select a starting trial from first block (1-140 to allow 5 consecutive trials)
+n_trial = 3;
+rng('default'); % For reproducibility
+start_trial = randi([1 144-n_trial+1], 1);
+selected_trials = start_trial:start_trial+3;
+
+% Extract epochs for selected trials
+selected_epochs = epochs(:,selected_trials,:);
+
+% Create full screen figure
+figure('Position', get(0, 'ScreenSize')); 
+
+% Calculate subplot layout
+num_regions = length(regions);
+num_cols = n_trial; 
+num_rows = num_regions;
+
+% Plot each region and trial
+for r = 1:length(regions)
+    % select electrodes for this region
+    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+    
+    if ~isempty(chanidx)
+        % Plot each trial separately
+        for trial = 1:n_trial
+            subplot(num_rows, num_cols, (r-1)*num_cols + trial)
+            hold on
+            
+            % Plot each electrode's response for this trial
+            plot(t, squeeze(selected_epochs(:,trial,chanidx)), 'LineWidth', 1);
+            xline(0); yline(0)
+            grid on
+            
+            % Only show x label on bottom row
+            if r == length(regions)
+                xlabel('Time (s)')
+            end
+            
+            % Only show y label on first column
+            if trial == 1
+                ylabel(['Region ' regions{r}])
+            end
+            
+            title(sprintf('Trial %d', selected_trials(trial)))
+            set(gca, 'XTick', min(align_onset_epoch_t):0.1:max(align_onset_epoch_t))
+            set(gca, 'FontSize', 10)
+        end
+    end
+end
+
+sgtitle(sprintf('Random 3 consecutive trials (starting at trial %d)', start_trial), 'FontSize', 14)
+
+% Save figure
+saveas(gcf, fullfile(figureDir, sprintf('random3trials.png')))
+
+
+%% Plot 3 random consecutive trials aligned by offset
+
+% Extract epochs for selected trials
+selected_epochs_offset = epochs_offset(:,selected_trials,:);
+
+% Create full screen figure
+figure('Position', get(0, 'ScreenSize')); 
+
+% Calculate subplot layout
+num_regions = length(regions);
+num_cols = n_trial;
+num_rows = num_regions;
+
+% Plot each region and trial
+for r = 1:length(regions)
+    % select electrodes for this region
+    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+    
+    if ~isempty(chanidx)
+        % Plot each trial separately
+        for trial = 1:n_trial
+            subplot(num_rows, num_cols, (r-1)*num_cols + trial)
+            hold on
+            
+            % Plot each electrode's response for this trial
+            plot(t_offset, squeeze(selected_epochs_offset(:,trial,chanidx)), 'LineWidth', 1);
+            xline(0); yline(0)
+            grid on
+            
+            % Only show x label on bottom row
+            if r == length(regions)
+                xlabel('Time from offset (s)')
+            end
+            
+            % Only show y label on first column
+            if trial == 1
+                ylabel(['Region ' regions{r}])
+            end
+            
+            title(sprintf('Trial %d', selected_trials(trial)))
+            set(gca, 'XTick', min(align_offset_epoch_t):0.1:max(align_offset_epoch_t))
+            set(gca, 'FontSize', 10)
+        end
+    end
+end
+
+sgtitle(sprintf('Random 3 consecutive trials aligned by offset (starting at trial %d)', start_trial), 'FontSize', 14)
+
+% Save figure
+saveas(gcf, fullfile(figureDir, sprintf('random3trials_offset.png')))
+
+
+%% check CAR data after filtering out carrier frequence (110 Hz) and line Frequency (60 Hz)
 
 % Apply low-pass filter under 100 Hz with notch at 60 Hz to remove line noise
 fprintf('Applying low-pass filter under 100 Hz with notch at 60 Hz...\n');
@@ -405,7 +516,7 @@ data_filtered = filtfilt(lpFilt, data_notch')'; % Then apply lowpass
 for r = 1:length(regions)
     % Select electrodes for this region
     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-    
+
     if ~isempty(chanidx)
         % Plot trial-averaged filtered response
         figure('Position', [100 100 1600 1200]); hold on
@@ -413,13 +524,13 @@ for r = 1:length(regions)
         plot(t, squeeze(mean(epochs_filtered(:,:,chanidx), 2)), 'LineWidth', 1);
         xline(0); yline(0)
         set(gca, 'XGrid', 'on')
-        set(gca, 'XTick', -0.4:0.1:1.8)
+        set(gca, 'XTick', min(align_onset_epoch_t):0.1:max(align_onset_epoch_t))
         title(['Region ' regions{r} ' - Trial-averaged response (Low-pass < 100 Hz, notch at 60 Hz)'])
         xlabel('Time (s)')
         ylabel('Amplitude (μV)')
-        
+
         % Save figure
-        saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged-filtered.png', subject, session, task, regions{r})))
+        saveas(gcf, fullfile(figureDir, sprintf('region%s_avg_filtered.png', regions{r})))
     end
 end
 
@@ -431,7 +542,7 @@ end
 for r = 1:length(regions)
     % Select electrodes for this region
     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-    
+
     if ~isempty(chanidx)
         % Plot trial-averaged filtered offset-aligned response
         figure('Position', [100 100 1600 1200]); hold on
@@ -439,18 +550,15 @@ for r = 1:length(regions)
         plot(t_offset, squeeze(mean(epochs_filtered_offset(:,:,chanidx), 2)), 'LineWidth', 1);
         xline(0); yline(0)
         set(gca, 'XGrid', 'on')
-        set(gca, 'XTick', -0.4:0.1:1.8)
+        set(gca, 'XTick', min(align_offset_epoch_t):0.1:max(align_offset_epoch_t))
         title(['Region ' regions{r} ' - Trial-averaged response aligned to offset (Low-pass < 100 Hz, notch at 60 Hz)'])
         xlabel('Time from offset (s)')
         ylabel('Amplitude (μV)')
-        
+
         % Save figure
-        saveas(gcf, fullfile(figureDir, sprintf('%s-%s-%s-region%s-trialaveraged-filtered-offsetaligned.png', subject, session, task, regions{r})))
+        saveas(gcf, fullfile(figureDir, sprintf('region%s_avg_filtered_offset.png', regions{r})))
     end
 end
-
-
-
 
 % 
 % %% EXTRACT BROADBAND (do it once)
