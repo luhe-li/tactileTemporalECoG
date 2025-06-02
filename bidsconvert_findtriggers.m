@@ -26,7 +26,7 @@ fprintf('[%s] Reading triggers from data \n', mfilename);
     'MinPeakHeight',peakOpts.minPeakHeight,...
     'MinPeakProminence',peakOpts.minPeakHeight,...
     'MinPeakDistance', peakOpts.minPeakDistance);
-valid_index = widths < 0.1;
+valid_index = widths < 0.2;
 trigger_onsets = trigger_onsets(valid_index);
 
 % Segment triggers into blocks using the gap threshold (e.g., 5 seconds)
@@ -50,13 +50,13 @@ for i = 1:numBlocks
     fprintf('Block %d: %d triggers\n', i, numel(blocks{i}));
 end
 
-% % For blocks with 145 triggers, remove the first trigger
-% for i = 1:numBlocks
-%     if numel(blocks{i}) == 145
-%         blocks{i}(1) = [];  % Remove the first trigger
-%         fprintf('Block %d had 145 triggers: first trigger removed.\n', i);
-%     end
-% end
+% For blocks with 145 triggers, remove the first trigger
+for i = 1:numBlocks
+    if numel(blocks{i}) == 145
+        blocks{i}(1) = [];  % Remove the first trigger
+        fprintf('Block %d had 145 triggers: first trigger removed.\n', i);
+    end
+end
 
 % Display block counts after correction
 fprintf('\nTrigger counts per block AFTER correction:\n');
