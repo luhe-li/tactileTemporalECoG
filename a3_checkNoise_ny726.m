@@ -14,7 +14,7 @@ task              = 'temporalpattern';
 
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], task);
 
-align_onset_epoch_t     = [-0.2 0.6];  % stimulus epoch window
+align_onset_epoch_t     = [-0.2 0.2];  % stimulus epoch window
 align_offset_epoch_t     = [-0.4 0.4];  % stimulus epoch window
 
 % group electrode by regions
@@ -36,86 +36,161 @@ for i = 1:length(events.trial_name)
 end
 [epochs_offset, t_offset] = ecog_makeEpochs(data, offsets, align_offset_epoch_t, channels.sampling_frequency(1));
 
+%% check one trial aligned by onset 
 
-%% Trial-averaged time series of all electrodes, aligned to onset and offset
-
-% Calculate subplot layout
-num_regions = length(regions);
-num_rows = ceil(sqrt(num_regions));
-num_cols = ceil(num_regions/num_rows);
-
-% Create full screen figure for trial-averaged responses
-figure('Position', get(0, 'ScreenSize')); 
-
-for r = 1:length(regions)
-    % select electrodes for this region
-    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+for current_trial = 1:size(epochs,2)
+    % Create subplots for onset-aligned data
+    figure('Position', get(0, 'ScreenSize')); 
     
-    if ~isempty(chanidx)
-        subplot(num_rows, num_cols, r)
-        hold on
-        plot(t, squeeze(mean(epochs(:,:,chanidx), 2)),'LineWidth',1);
-        xline(0); yline(0)
-        grid on
-        title(['Region ' regions{r}])
+    % Calculate subplot layout - 3x3 grid
+    subplot_dims = [3 3];
+    
+    % Extract epochs for current trial
+    selected_epoch = epochs(:,current_trial,:);
+    selected_epoch_offset = epochs_offset(:,current_trial,:);
+    
+    % Plot each region for onset-aligned data
+    for r = 1:length(regions)
+        % select electrodes for this region
+        chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
         
-        % Only show x label on bottom row
-        if r > (num_rows-1)*num_cols
-            xlabel('Time from onset (s)')
-        end
-        
-        % Only show y label on first column
-        if mod(r-1, num_cols) == 0
+        if ~isempty(chanidx)
+            subplot(subplot_dims(1), subplot_dims(2), r)
+            hold on
+            
+            % Plot each electrode's response for this trial
+            plot(t, squeeze(selected_epoch(:,1,chanidx)), 'LineWidth', 1);
+            xline(0); yline(0)
+            grid on
+            
+            xlabel('Time (s)')
             ylabel('Amplitude (μV)')
+            title(['Region ' regions{r}])
+            set(gca, 'XTick', min(align_onset_epoch_t):0.01:max(align_onset_epoch_t))
+            set(gca, 'FontSize', 10)
         end
-        
-        set(gca, 'XTick', min(align_onset_epoch_t):0.2:max(align_onset_epoch_t))
-        set(gca, 'FontSize', 10)
+    end
+    
+    sgtitle(sprintf('Trial %d - Onset aligned', current_trial), 'FontSize', 14)
+    
+    % % Create subplots for offset-aligned data
+    % figure('Position', get(0, 'ScreenSize')); 
+    % 
+    % % Plot each region for offset-aligned data
+    % for r = 1:length(regions)
+    %     % select electrodes for this region
+    %     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+    % 
+    %     if ~isempty(chanidx)
+    %         subplot(subplot_dims(1), subplot_dims(2), r)
+    %         hold on
+    % 
+    %         % Plot each electrode's response for this trial
+    %         plot(t_offset, squeeze(selected_epoch_offset(:,1,chanidx)), 'LineWidth', 1);
+    %         xline(0); yline(0)
+    %         grid on
+    % 
+    %         xlabel('Time from offset (s)')
+    %         ylabel('Amplitude (μV)')
+    %         title(['Region ' regions{r}])
+    %         set(gca, 'XTick', min(align_offset_epoch_t):0.01:max(align_offset_epoch_t))
+    %         set(gca, 'FontSize', 10)
+    %     end
+    % end
+    % 
+    % sgtitle(sprintf('Trial %d - Offset aligned', current_trial), 'FontSize', 14)
+    
+    % Wait for mouse click
+    w = waitforbuttonpress;
+    if w == 0 % Mouse click
+        close all;
+        continue;
+    else % Keyboard press
+        close all;
+        break;
     end
 end
-sgtitle('Trial-averaged response, all electrodes grouped by region', 'FontSize', 14)
 
-% Save figure
-figureDir = fullfile(bidsRootPath, 'derivatives', 'ECoGFigures', ['sub-' subject], 'CAR_figures');
-if ~exist(figureDir, 'dir')
-    mkdir(figureDir);
-end
-saveas(gcf, fullfile(figureDir, 'all_regions_avg_onset.png'))
 
-% Create full screen figure for trial-averaged responses aligned to offset
-figure('Position', get(0, 'ScreenSize')); 
-
-for r = 1:length(regions)
-    % select electrodes for this region
-    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-    
-    if ~isempty(chanidx)
-        subplot(num_rows, num_cols, r)
-        hold on
-        plot(t_offset, squeeze(mean(epochs_offset(:,:,chanidx), 2)),'LineWidth',1);
-        xlim(align_offset_epoch_t)
-        xline(0); yline(0)
-        grid on
-        title(['Region ' regions{r}])
-        
-        % Only show x label on bottom row
-        if r > (num_rows-1)*num_cols
-            xlabel('Time from offset (s)')
-        end
-        
-        % Only show y label on first column
-        if mod(r-1, num_cols) == 0
-            ylabel('Amplitude (μV)')
-        end
-        
-        set(gca, 'XTick', min(align_offset_epoch_t):0.2:max(align_offset_epoch_t))
-        set(gca, 'FontSize', 10)
-    end
-end
-sgtitle('Trial-averaged response, all electrodes grouped by region', 'FontSize', 14)
-
-% Save figure
-saveas(gcf, fullfile(figureDir, 'all_regions_avg_offset.png'))
+% %% Trial-averaged time series of all electrodes, aligned to onset and offset
+% 
+% % Calculate subplot layout
+% num_regions = length(regions);
+% num_rows = ceil(sqrt(num_regions));
+% num_cols = ceil(num_regions/num_rows);
+% 
+% % Create full screen figure for trial-averaged responses
+% figure('Position', get(0, 'ScreenSize')); 
+% 
+% for r = 1:length(regions)
+%     % select electrodes for this region
+%     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+% 
+%     if ~isempty(chanidx)
+%         subplot(num_rows, num_cols, r)
+%         hold on
+%         plot(t, squeeze(mean(epochs(:,:,chanidx), 2)),'LineWidth',1);
+%         xline(0); yline(0)
+%         grid on
+%         title(['Region ' regions{r}])
+% 
+%         % Only show x label on bottom row
+%         if r > (num_rows-1)*num_cols
+%             xlabel('Time from onset (s)')
+%         end
+% 
+%         % Only show y label on first column
+%         if mod(r-1, num_cols) == 0
+%             ylabel('Amplitude (μV)')
+%         end
+% 
+%         set(gca, 'XTick', min(align_onset_epoch_t):0.2:max(align_onset_epoch_t))
+%         set(gca, 'FontSize', 10)
+%     end
+% end
+% sgtitle('Trial-averaged response, all electrodes grouped by region', 'FontSize', 14)
+% 
+% % Save figure
+% figureDir = fullfile(bidsRootPath, 'derivatives', 'ECoGFigures', ['sub-' subject], 'CAR_figures');
+% if ~exist(figureDir, 'dir')
+%     mkdir(figureDir);
+% end
+% saveas(gcf, fullfile(figureDir, 'all_regions_avg_onset.png'))
+% 
+% % Create full screen figure for trial-averaged responses aligned to offset
+% figure('Position', get(0, 'ScreenSize')); 
+% 
+% for r = 1:length(regions)
+%     % select electrodes for this region
+%     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
+% 
+%     if ~isempty(chanidx)
+%         subplot(num_rows, num_cols, r)
+%         hold on
+%         plot(t_offset, squeeze(mean(epochs_offset(:,:,chanidx), 2)),'LineWidth',1);
+%         xlim(align_offset_epoch_t)
+%         xline(0); yline(0)
+%         grid on
+%         title(['Region ' regions{r}])
+% 
+%         % Only show x label on bottom row
+%         if r > (num_rows-1)*num_cols
+%             xlabel('Time from offset (s)')
+%         end
+% 
+%         % Only show y label on first column
+%         if mod(r-1, num_cols) == 0
+%             ylabel('Amplitude (μV)')
+%         end
+% 
+%         set(gca, 'XTick', min(align_offset_epoch_t):0.2:max(align_offset_epoch_t))
+%         set(gca, 'FontSize', 10)
+%     end
+% end
+% sgtitle('Trial-averaged response, all electrodes grouped by region', 'FontSize', 14)
+% 
+% % Save figure
+% saveas(gcf, fullfile(figureDir, 'all_regions_avg_offset.png'))
 
 % %% filter line noise and equipment noise
 % 
@@ -244,33 +319,33 @@ for chan = 1:n_chans
     
 end
 
-%%
-% Plot ITPC for each channel
-figure('Position', get(0, 'ScreenSize'));
-
-% Calculate subplot layout
-n_total_chans = size(itpc,3);
-n_rows = ceil(sqrt(n_total_chans));
-n_cols = ceil(n_total_chans/n_rows);
-
-for chan = 1:n_total_chans
-    subplot(n_rows, n_cols, chan)
-    
-    % Plot time-frequency map for this channel
-    imagesc(t, freqs(1:50), itpc(:,1:50,chan));
-    axis xy
-    colorbar
-    caxis([0 0.5]) % Set color limits for ITPC (0-1)
-    
-    title(['Channel ' channels.name{chan}])
-    xlabel('Time from onset (s)')
-    ylabel('Frequency (Hz)')
-    
-    % Add vertical line at stimulus onset
-    hold on
-    line([0 0], ylim, 'Color', 'w', 'LineStyle', '--')
-end
-
-
-% Save ITPC figure
-saveas(gcf, fullfile(figureDir, 'all_channels_ITPC.jpg'))
+%
+% % Plot ITPC for each channel
+% figure('Position', get(0, 'ScreenSize'));
+% 
+% % Calculate subplot layout
+% n_total_chans = size(itpc,3);
+% n_rows = ceil(sqrt(n_total_chans));
+% n_cols = ceil(n_total_chans/n_rows);
+% 
+% for chan = 1:n_total_chans
+%     subplot(n_rows, n_cols, chan)
+% 
+%     % Plot time-frequency map for this channel
+%     imagesc(t, freqs(1:50), itpc(:,1:50,chan));
+%     axis xy
+%     colorbar
+%     caxis([0 0.5]) % Set color limits for ITPC (0-1)
+% 
+%     title(['Channel ' channels.name{chan}])
+%     xlabel('Time from onset (s)')
+%     ylabel('Frequency (Hz)')
+% 
+%     % Add vertical line at stimulus onset
+%     hold on
+%     line([0 0], ylim, 'Color', 'w', 'LineStyle', '--')
+% end
+% 
+% 
+% % Save ITPC figure
+% saveas(gcf, fullfile(figureDir, 'all_channels_ITPC.jpg'))
