@@ -94,7 +94,6 @@ for r = 1:length(regions)
         subplot(num_rows, num_cols, r)
         hold on
         plot(t_offset, squeeze(mean(epochs_offset(:,:,chanidx), 2)),'LineWidth',1);
-        xlim(align_offset_epoch_t)
         xline(0); yline(0)
         grid on
         title(['Region ' regions{r}])
@@ -117,84 +116,3 @@ sgtitle('Trial-averaged response, all electrodes grouped by region', 'FontSize',
 
 % Save figure
 saveas(gcf, fullfile(figureDir, 'all_regions_avg_offset.png'))
-
-%% filter line noise and equipment noise
-
-srate = channels.sampling_frequency(1); % Get sampling rate
-
-% Design notch filter at 60 Hz
-notchFilt = designfilt('bandstopiir', ...
-    'FilterOrder', 4, ...
-    'HalfPowerFrequency1', 59, ...
-    'HalfPowerFrequency2', 61, ...
-    'SampleRate', srate);
-
-% Design band-stop filter for 100-130 Hz
-bandstopFilt = designfilt('bandstopiir', ...
-    'FilterOrder', 4, ...
-    'HalfPowerFrequency1', 100, ...
-    'HalfPowerFrequency2', 130, ...
-    'SampleRate', srate);
-
-% Apply filters to data
-data_notch = filtfilt(notchFilt, double(data)')'; % First remove 60 Hz
-data_filtered = filtfilt(bandstopFilt, data_notch')'; % Then remove 100-130 Hz
-
-% Make epochs with filtered data aligned to onset
-[epochs_filtered, t] = ecog_makeEpochs(data_filtered, events.onset, align_onset_epoch_t, srate);
-
-% Plot filtered onset-aligned data for all regions in one figure
-figure('Position', get(0, 'ScreenSize')); 
-subplot_dims = [3, 3]; % 3x3 grid for 9 regions
-
-for r = 1:length(regions)
-    % Select electrodes for this region
-    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-    
-    if ~isempty(chanidx)
-        subplot(subplot_dims(1), subplot_dims(2), r)
-        hold on
-        plot(t, squeeze(mean(epochs_filtered(:,:,chanidx), 2)), 'LineWidth', 1);
-        xline(0); yline(0)
-        grid on
-        title(['Region ' regions{r}])
-        xlabel('Time from onset (s)')
-        ylabel('Amplitude (μV)')
-        set(gca, 'XTick', min(align_onset_epoch_t):0.1:max(align_onset_epoch_t))
-        set(gca, 'FontSize', 10)
-    end
-end
-sgtitle('Trial-averaged response (60 Hz notch, 100-130 Hz band-stop)', 'FontSize', 15)
-
-% Save onset-aligned figure
-saveas(gcf, fullfile(figureDir, 'all_regions_filtered_onset.jpg'))
-
-% Make epochs with filtered data aligned to offset
-[epochs_filtered_offset, t_offset] = ecog_makeEpochs(data_filtered, offsets, align_offset_epoch_t, srate);
-
-% Plot filtered offset-aligned data for all regions in one figure
-figure('Position', get(0, 'ScreenSize')); 
-
-for r = 1:length(regions)
-    % Select electrodes for this region
-    chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-    
-    if ~isempty(chanidx)
-        subplot(subplot_dims(1), subplot_dims(2), r)
-        hold on
-        plot(t_offset, squeeze(mean(epochs_filtered_offset(:,:,chanidx), 2)), 'LineWidth', 1);
-        xline(0); yline(0)
-        grid on
-        title(['Region ' regions{r}])
-        xlabel('Time from offset (s)')
-        ylabel('Amplitude (μV)')
-        xlim(align_offset_epoch_t)
-        set(gca, 'XTick', min(align_offset_epoch_t):0.1:max(align_offset_epoch_t))
-        set(gca, 'FontSize', 10)
-    end
-end
-sgtitle('Trial-averaged response (60 Hz notch, 100-130 Hz band-stop)', 'FontSize', 15)
-
-% Save offset-aligned figure
-saveas(gcf, fullfile(figureDir, 'all_regions_filtered_offset.jpg'))
-
