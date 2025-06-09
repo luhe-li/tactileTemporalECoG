@@ -1,4 +1,26 @@
-% tbUse tactileTemporalECoG
+
+clear;
+tbUse tactileTemporalECoG
+
+projectDir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile'; 
+subject = 'ny726';
+
+%% check broadband time/frequency
+
+outputFolder      = 'ECoGBroadband_exclude110Hz';
+% data = ecog_notch(data, srate, 110); 
+
+bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]; [160 170]];
+bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+
+%%
+
+% bands             = [[70 80]; [80 90]; [90 100]; [100 110]; [110 120]; [120 130]; [130 140]; [140 150]; [150 160]; [160 170]];
+% bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+
+
+
+%% 
 
 bidsRootPath = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
 dataPath = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');

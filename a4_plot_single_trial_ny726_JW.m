@@ -1,6 +1,6 @@
-clear; close all;
+ clear; close all;
 
-tbUse tactileTemporalECoG
+% tbUse tactileTemporalECoG
 bidsRootPath = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
 dataPath = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
 subject           = 'ny726';
@@ -10,6 +10,7 @@ task              = 'temporalpattern';
 %% CHECK CAR data
 
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], task);
+long = find(events.duration > 0.25);
 
 align_onset_epoch_t     = [-0.2 0.2];  % stimulus epoch window
 align_offset_epoch_t     = [-0.4 0.4];  % stimulus epoch window
@@ -19,6 +20,10 @@ regions = {'H','M','P','R','S','V','W','Y','Z'};
 
 % epoch by onset: time series x trial x electrode
 [epochs, t] = ecog_makeEpochs(data, events.onset, align_onset_epoch_t, channels.sampling_frequency(1));
+
+%sz = size(epochs);
+%epochs = highpass(reshape(epochs, sz(1), []), 70, srate);
+%epochs = reshape(epochs, sz);
 
 % epoch by offset: time series x trial x electrode
 offsets = zeros(size(events.onset));
@@ -35,12 +40,13 @@ end
 
 %% check one trial aligned by onset 
 
-for current_trial = 1:size(epochs,2)
+for ii = 1:length(long)
+    current_trial = long(ii);
     % Create subplots for onset-aligned data
     figure('Position', get(0, 'ScreenSize')); 
     
     % Calculate subplot layout - 3x3 grid
-    subplot_dims = [3 3];
+    subplot_dims = [4 3];
     
     % Extract epochs for current trial
     selected_epoch = epochs(:,current_trial,:);
@@ -56,20 +62,62 @@ for current_trial = 1:size(epochs,2)
             hold on
             
             % Plot each electrode's response for this trial
-            plot(t, squeeze(selected_epoch(:,1,chanidx)), 'LineWidth', 1);
-            xline(0); yline(0)
+            %plot(t, squeeze(selected_epoch(:,1,chanidx)), 'LineWidth', 1);
+            ts = mean(squeeze(selected_epoch(:,1,chanidx)),2);
+            
+            tidx = (length(t)-102):length(t);           
+            fs1 = (0:length(tidx)-1)./(t(tidx(end))-t(tidx(1)));            
+            A1 = abs(fft(ts(tidx)));
+            P1  = angle(fft(ts(tidx)));                      
+            [~, carrierIDX]=min(abs(fs1-110));
+            Pcarrier1(r) = P1(carrierIDX);
+            Acarrier1(r) = A1(carrierIDX);
+            Pcarrier1_c(r) = P1(carrierIDX+3);
+            Acarrier1_c(r) = A1(carrierIDX+3);
+
+            tidx = 1:103;
+            fs2 = (0:length(tidx)-1)./(t(tidx(end))-t(tidx(1)));
+            A2 = abs(fft(ts(tidx)));
+            P2  = angle(fft(ts(tidx)));  
+            [~, carrierIDX]=min(abs(fs1-110));
+            Pcarrier2(r) = P2(carrierIDX);
+            Acarrier2(r) = A2(carrierIDX);
+            Pcarrier2_c(r) = P2(carrierIDX+3);
+            Acarrier2_c(r) = A2(carrierIDX+3);
+            
+           % plot(t, ts, 'LineWidth', 2);
+
+            plot(fs1, A1, fs2, A2,  linewidth=2);
+            
+            % yyaxis right
+            % plot(fs1, P1, 'ro', fs2, P2,'bo', linewidth=2);
+            xlim([50 200])
+
+            yscale('linear');
+            
+            xline(110);
             grid on
             
-            xlabel('Time (s)')
-            ylabel('Amplitude (μV)')
+            %xlabel('Time (s)')
+            %ylabel('Amplitude (μV)')
             title(['Region ' regions{r}])
-            set(gca, 'XTick', min(align_onset_epoch_t):0.01:max(align_onset_epoch_t))
+            %set(gca, 'XTick', min(align_onset_epoch_t):1/110:max(align_onset_epoch_t))
             set(gca, 'FontSize', 10)
         end
     end
     
     sgtitle(sprintf('Trial %d - Onset aligned', current_trial), 'FontSize', 14)
     
+    subplot(subplot_dims(1), subplot_dims(2),10)
+    compassplot([Pcarrier1; Pcarrier2]', [Acarrier1; Acarrier2]',linewidth=3);
+    title('110 Hz')
+    legend('Stim', 'Blank')
+
+    subplot(subplot_dims(1), subplot_dims(2),11)
+    compassplot([Pcarrier1_c; Pcarrier2_c]', [Acarrier1_c; Acarrier2_c]',linewidth=3);
+     title('125 Hz')
+    legend('Stim', 'Blank')
+
     % % Create subplots for offset-aligned data
     % figure('Position', get(0, 'ScreenSize')); 
     % 
