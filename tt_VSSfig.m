@@ -44,40 +44,73 @@ maxresp = max(max(d(:))); % scale stimulus to max across conditions and dataset
 set(0, 'DefaultAxesFontName', 'Helvetica Neue');
 set(0, 'DefaultTextFontName', 'Helvetica Neue');
 
-% Loop over conditions
-for jj = 1:length(conditionsOfInterest)
+% Create a 2x6 grid of subplots
+nRows = 2;
+nCols = 6;
 
-    subplot('position', pos(jj,:)); cla; hold on
-    inx = contains(stim_info.name, conditionsOfInterest{jj});
-    cond = unique(stim_info.condition(inx));
+% Find all unique ONEPULSE and TWOPULSE conditions and their numbers
+onepulse_idx = find(contains(conditionsOfInterest, 'ONEPULSE'));
+twopulse_idx = find(contains(conditionsOfInterest, 'TWOPULSE'));
+
+% Extract the numbers at the end of each condition string
+get_col = @(str) sscanf(regexp(str, '\d+$', 'match', 'once'), '%d');
+
+% Precompute R2 values for legend
+R2val = nan(nModels, nRows, nCols);
+
+for jj = 1:length(conditionsOfInterest)
+    condStr = conditionsOfInterest{jj};
+    % Determine row and column
+    if contains(condStr, 'ONEPULSE')
+        row = 1;
+    elseif contains(condStr, 'TWOPULSE')
+        row = 2;
+    else
+        continue; % skip if not recognized
+    end
+    col = get_col(condStr);
+    if isempty(col) || col < 1 || col > nCols
+        continue; % skip if column not valid
+    end
+    subplot_idx = (row-1)*nCols + col;
+    subplot(nRows, nCols, subplot_idx); cla; hold on
+
+    % Find trials for this condition
+    inx = contains(stim_info.name, condStr);
 
     % plot stimulus
     h = plot(flatten(stim_ts(t_ind,inx))*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
-    h.Annotation.LegendInformation.IconDisplayStyle = 'off';
+    if isfield(h, 'Annotation')
+        h.Annotation.LegendInformation.IconDisplayStyle = 'off';
+    end
 
     % plot data
     dat = flatten(d(:,inx)); 
     plot(smooth(dat,15), 'Color', 'k', 'LineWidth', 2);
-    titlestr = cell(1,nModels);
 
     % plot models
     for kk = 1:nModels
         pred = flatten(results(kk).pred(t_ind,inx,ii));
-        %plot(flatten(pred), 'Color', colors{kk}, 'LineStyle', '-.', 'LineWidth', 2);
         plot(smooth(pred,15),'Color', brclt(kk,:), 'LineWidth', 3);
-        R2val(kk) = results(kk).R2.concat_all(ii);
+        R2val(kk, row, col) = results(kk).R2.concat_all(ii);
     end
 
-    set(gca, 'LineWidth', 2, 'FontSize', 25, 'TickDir', 'out');
+    set(gca, 'LineWidth', 2, 'FontSize', 18, 'TickDir', 'out');
 
-    % add title
+    % Set x-ticks and labels
     set(gca, 'XTick',1:size(d,1):length(find(inx))*size(d,1));
-    if contains(conditionsOfInterest{jj}, 'ONEPULSE')
+    if row == 1
         set(gca, 'XTickLabel', stim_info.duration(inx))
-        xlabel('Duration (s)','FontSize',30)
+        xlabel('Duration (s)','FontSize',18)
+        if col == 1
+            ylabel('ONEPULSE','FontSize',18,'FontWeight','bold');
+        end
     else
         set(gca, 'XTickLabel', stim_info.ISI(inx))
-        xlabel('Stimulus ISI (s)', 'FontSize', 30)
+        xlabel('Stimulus ISI (s)', 'FontSize', 18)
+        if col == 1
+            ylabel('TWOPULSE','FontSize',18,'FontWeight','bold');
+        end
     end
 
 %     l = {'Neural response',...
