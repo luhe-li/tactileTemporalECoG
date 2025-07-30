@@ -32,7 +32,7 @@ t_ind       = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
 ii          = nDatasets; % select the last channel
 
 figure;
-set(gcf, 'Position', [0 0 1800 700]);
+set(gcf, 'Position', [0 0 2400 700]);
 set(0, 'DefaultAxesFontName', 'Helvetica Neue');
 set(0, 'DefaultTextFontName', 'Helvetica Neue');
 
@@ -71,26 +71,28 @@ for idx = 1:length(stim_info.name)
     if col > nCols
         continue; % skip if column out of range
     end
-    subplot(nRows, nCols, (row-1)*nCols + col); hold on; box on
+    subplot(nRows, nCols, (row-1)*nCols + col); hold on; box off
 
     % Plot stimulus
-    plot(stim_ts(t_ind,idx)*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+    plot(t(2:end), stim_ts(t_ind,idx)*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
 
     % Plot data
-    plot(smooth(d(:,idx),15), 'Color', 'k', 'LineWidth', 2);
+    plot(t(2:end), smooth(d(:,idx),15), 'Color', 'k', 'LineWidth', 2);
 
     % Plot model predictions
     for kk = 1:nModels
         pred = results(kk).pred(t_ind,idx,ii);
-        plot(smooth(pred,15), 'Color', brclt(kk,:), 'LineWidth', 3);
+        plot(t(2:end),smooth(pred,15), 'Color', brclt(kk,:), 'LineWidth', 3);
     end
 
     set(gca, 'LineWidth', 2, 'FontSize', 16, 'TickDir', 'out');
-    if row == nRows
-        xlabel('Time (samples)', 'FontSize', 18);
-    end
+    % if row == nRows
+    %     xlabel('Time (samples)', 'FontSize', 18);
+    % end
     if col == 1
         ylabel('Broadband power change (X-fold)', 'FontSize', 18);
+    else
+        set(gca, 'YTick', [], 'YTickLabel', []);
     end
 
     % Title with condition info
@@ -99,22 +101,27 @@ for idx = 1:length(stim_info.name)
     else
         ttl = sprintf('TWOPULSE ISI %ds', stim_info.ISI(idx));
     end
-    title(ttl, 'FontSize', 16);
 
     % Optionally, add legend to first subplot
-    if (row == 1 && col == 1)
-        l = {'Stimulus', 'Neural response', ...
-            sprintf('Linear pred, R^2=%.2f', R2val(1)), ...
-            sprintf('DN pred, R^2=%.2f', R2val(2))};
-        legend(l, 'Location', 'best');
-    end
+    % if (row == 1 && col == 1)
+    %     l = {'Stimulus', 'Neural response', ...
+    %         sprintf('Linear pred, R^2=%.2f', R2val(1)), ...
+    %         sprintf('DN pred, R^2=%.2f', R2val(2))};
+    %     legend(l, 'Location', 'best');
+    % end
+    % xlim(timepointsOfInterest)
+    
 end
 
 sprintf('R^2 = %.2f, %.2f', R2val)
 %% save
 
 figureName = sprintf('fits_%s', channels.name{ii});
-saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'VSSfigure');
+% saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'VSSfigure');
+saveDir = fullfile(pwd, 'figures');
 if ~exist(saveDir, 'dir'), mkdir(saveDir), end
     print(gcf, fullfile(saveDir, figureName), '-dsvg');
 close;
+
+timepointsOfInterest = [0, 2];
+tt_plotSumDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'},timepointsOfInterest)

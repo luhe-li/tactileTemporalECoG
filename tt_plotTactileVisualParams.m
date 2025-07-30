@@ -19,7 +19,7 @@ nModels     = size(results,2);
 v_nChans = height(v_channels);
 
 figure('Name', 'tact_vis_fitted parameters'); hold on
-set(gcf, 'Position', [400 800 2000 600]);
+set(gcf, 'Position', [400 800 2000 800]);
 
 %% Plot
 
@@ -27,9 +27,13 @@ set(gcf, 'Position', [400 800 2000 600]);
 tmp = loadjson(fullfile(tt_RootPath, 'models', sprintf('%s.json', func2str(modelfun))));
 paramNames = strsplit(tmp.params,',');
 nParams = length(paramNames); % shared between tact and vis
+paramSlc = [1:5,7];
 
-for p = 1:nParams
-    subplot(2,ceil(nParams/2),p); hold on
+for n = 1:numel(paramSlc)
+    p = paramSlc(n);
+
+    subplot(2,ceil(numel(paramSlc)/2),n); hold on
+    set(gca, 'LineWidth', 2, 'FontSize', 16, 'TickDir', 'out');
 
     for kk = nModels:-1:1
 

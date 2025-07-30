@@ -35,5 +35,6 @@ datatype = 'individualelecs';
 
 %% 4. Plot
 
-saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'figure', 'compareTactVis');
+% saveDir = fullfile(tt_bidsRootPath, 'derivatives', 'modelFit', 'figure', 'compareTactVis');
+saveDir = fullfile(pwd,'figures');
 tt_plotTactileVisualParams(D, modelfun, saveDir)
