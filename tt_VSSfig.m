@@ -31,60 +31,83 @@ nCond       = length(conditionsOfInterest);
 t_ind       = t>timepointsOfInterest(1) & t<=timepointsOfInterest(2);
 ii          = nDatasets; % select the last channel
 
-figure; hold on
-set(gcf, 'Position', [0 0 1600 500]);
-% Subplot positions: % [left bottom width height]
-pos(1,:) = [0.05 0.62 0.9 0.30];
-pos(2,:) = [0.05 0.12 0.9 0.30];
-
-ylabel('Broadband power change (X-fold)','FontSize', 30);
-
-d = data(t_ind,:,ii);
-maxresp = max(max(d(:))); % scale stimulus to max across conditions and dataset
+figure;
+set(gcf, 'Position', [0 0 1800 700]);
 set(0, 'DefaultAxesFontName', 'Helvetica Neue');
 set(0, 'DefaultTextFontName', 'Helvetica Neue');
 
-% Loop over conditions
-for jj = 1:length(conditionsOfInterest)
+d = data(t_ind,:,ii);
+maxresp = max(max(d(:))); % scale stimulus to max across conditions and dataset
 
-    subplot('position', pos(jj,:)); cla; hold on
-    inx = contains(stim_info.name, conditionsOfInterest{jj});
-    cond = unique(stim_info.condition(inx));
+nRows = 2; nCols = 6;
 
-    % plot stimulus
-    h = plot(flatten(stim_ts(t_ind,inx))*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
-    h.Annotation.LegendInformation.IconDisplayStyle = 'off';
+% Precompute R2 for legend if needed
+R2val = nan(1, nModels);
+for kk = 1:nModels
+    R2val(kk) = results(kk).R2.concat_all(ii);
+end
 
-    % plot data
-    dat = flatten(d(:,inx)); 
-    plot(smooth(dat,15), 'Color', 'k', 'LineWidth', 2);
-    titlestr = cell(1,nModels);
-
-    % plot models
-    for kk = 1:nModels
-        pred = flatten(results(kk).pred(t_ind,inx,ii));
-        %plot(flatten(pred), 'Color', colors{kk}, 'LineStyle', '-.', 'LineWidth', 2);
-        plot(smooth(pred,15),'Color', brclt(kk,:), 'LineWidth', 3);
-        R2val(kk) = results(kk).R2.concat_all(ii);
-    end
-
-    set(gca, 'LineWidth', 2, 'FontSize', 25, 'TickDir', 'out');
-
-    % add title
-    set(gca, 'XTick',1:size(d,1):length(find(inx))*size(d,1));
-    if contains(conditionsOfInterest{jj}, 'ONEPULSE')
-        set(gca, 'XTickLabel', stim_info.duration(inx))
-        xlabel('Duration (s)','FontSize',30)
+for idx = 1:length(stim_info.name)
+    name = stim_info.name{idx};
+    % Determine row and column
+    if contains(name, 'ONEPULSE')
+        row = 1;
+        % Extract the number at the end of the name for column
+        colnum = regexp(name, '(\d+)$', 'tokens');
+        if isempty(colnum)
+            continue; % skip if no number found
+        end
+        col = str2double(colnum{1}{1});
+    elseif contains(name, 'TWOPULSE')
+        row = 2;
+        colnum = regexp(name, '(\d+)$', 'tokens');
+        if isempty(colnum)
+            continue;
+        end
+        col = str2double(colnum{1}{1});
     else
-        set(gca, 'XTickLabel', stim_info.ISI(inx))
-        xlabel('Stimulus ISI (s)', 'FontSize', 30)
+        continue; % skip if not one of the two conditions
+    end
+    if col > nCols
+        continue; % skip if column out of range
+    end
+    subplot(nRows, nCols, (row-1)*nCols + col); hold on; box on
+
+    % Plot stimulus
+    plot(stim_ts(t_ind,idx)*maxresp, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+
+    % Plot data
+    plot(smooth(d(:,idx),15), 'Color', 'k', 'LineWidth', 2);
+
+    % Plot model predictions
+    for kk = 1:nModels
+        pred = results(kk).pred(t_ind,idx,ii);
+        plot(smooth(pred,15), 'Color', brclt(kk,:), 'LineWidth', 3);
     end
 
-%     l = {'Neural response',...
-%         sprintf('Linear prediction, R^2 = %.2f', R2val(1)),...
-%         sprintf('Delayed normalization prediction, R^2 = %.2f', R2val(2))};
-%     if jj == 2, legend(l); end
-    
+    set(gca, 'LineWidth', 2, 'FontSize', 16, 'TickDir', 'out');
+    if row == nRows
+        xlabel('Time (samples)', 'FontSize', 18);
+    end
+    if col == 1
+        ylabel('Broadband power change (X-fold)', 'FontSize', 18);
+    end
+
+    % Title with condition info
+    if contains(name, 'ONEPULSE')
+        ttl = sprintf('ONEPULSE %ds', stim_info.duration(idx));
+    else
+        ttl = sprintf('TWOPULSE ISI %ds', stim_info.ISI(idx));
+    end
+    title(ttl, 'FontSize', 16);
+
+    % Optionally, add legend to first subplot
+    if (row == 1 && col == 1)
+        l = {'Stimulus', 'Neural response', ...
+            sprintf('Linear pred, R^2=%.2f', R2val(1)), ...
+            sprintf('DN pred, R^2=%.2f', R2val(2))};
+        legend(l, 'Location', 'best');
+    end
 end
 
 sprintf('R^2 = %.2f, %.2f', R2val)
