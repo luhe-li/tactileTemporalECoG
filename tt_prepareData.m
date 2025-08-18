@@ -114,7 +114,7 @@ data_slc = nan(length(t), length(stim_names), numel(chan_idx));
 ci_slc   = nan(length(t), 2, length(stim_names), numel(chan_idx));
 
 % Loop over electrodes
-for ee = 1:sum(chan_idx)
+for ee = 1:numel(chan_idx)
 
     if ~isnan(chan_idx(ee))
 

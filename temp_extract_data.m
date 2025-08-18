@@ -1,6 +1,6 @@
 
 clear;
-tbUse tactileTemporalECoG
+% tbUse tactileTemporalECoG
 
 bidsRootPath = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
 dataPath = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');

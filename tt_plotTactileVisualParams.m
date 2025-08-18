@@ -69,7 +69,7 @@ end
 if saveFig
     if ~exist(saveDir), mkdir(saveDir); end
     figName = sprintf('tactVisFittedParams2_%s', func2str(modelfun));
-    saveas(gcf, fullfile(saveDir, figName), 'png');
+    saveas(gcf, fullfile(saveDir, figName), 'pdf');
 end
 
 end
