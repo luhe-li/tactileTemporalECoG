@@ -2,14 +2,13 @@
 
 %% knobs and basic info
 
-fitIndivElecs = true;
 options       = [];
-if fitIndivElecs
-    options.average_elecs = false;
-    datatype = 'individualelecs';
+options.average_elecs = true;
+
+if options.average_elecs
+    datatype = 'electrodeaverages'; 
 else
-    options.average_elecs = true;
-    datatype = 'electrodeaverages';
+    datatype = 'individualelecs';
 end
 
 % Load or (re)compute the processed data
@@ -42,15 +41,15 @@ specs.stim_names   = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'O
 % Fitting DN/Linear model by reusing Iris' codes, removing probabilistic
 % resample step
 
-fname             = '@LINEAR';
+fname             = '@DN';
 modelfun          = str2func(fname);
 
 % Define options
-options.doplots   = true;
+options.doplots   = false;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
-options.fitaverage = false;
+options.fitaverage = options.average_elecs;
 options.nfits     = 1000; % if fit average
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
