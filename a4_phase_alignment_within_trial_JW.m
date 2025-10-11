@@ -1,11 +1,13 @@
- clear; close all;
+clear; close all;
 
-% tbUse tactileTemporalECoG
+tbUse tactileTemporalECoG
 bidsRootPath = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
 dataPath = fullfile(bidsRootPath, 'derivatives', 'ECoGCAR');
 subject           = 'ny726';
 session           = 'nyuecog01';
 task              = 'temporalpattern';
+figureDir = fullfile(pwd, mfilename);
+if ~exist(figureDir,'dir'); mkdir(figureDir); end
 
 %% CHECK CAR data
 
@@ -38,8 +40,7 @@ for i = 1:length(events.trial_name)
 end
 [epochs_offset, t_offset] = ecog_makeEpochs(data, offsets, align_offset_epoch_t, channels.sampling_frequency(1));
 
-%% check one trial aligned by onset 
-
+%%
 for ii = 1:length(long)
     current_trial = long(ii);
     % Create subplots for onset-aligned data
@@ -146,6 +147,7 @@ for ii = 1:length(long)
     % sgtitle(sprintf('Trial %d - Offset aligned', current_trial), 'FontSize', 14)
     
     % Wait for mouse click
+    saveas(gcf, fullfile(figureDir, sprintf('ITPC_trila%i.jpg',ii)))
     w = waitforbuttonpress;
     if w == 0 % Mouse click
         close all;
@@ -154,168 +156,8 @@ for ii = 1:length(long)
         close all;
         break;
     end
+
 end
-
-% %% Trial-averaged time series of all electrodes, aligned to onset and offset
-% 
-% % Calculate subplot layout
-% num_regions = length(regions);
-% num_rows = ceil(sqrt(num_regions));
-% num_cols = ceil(num_regions/num_rows);
-% 
-% % Create full screen figure for trial-averaged responses
-% figure('Position', get(0, 'ScreenSize')); 
-% 
-% for r = 1:length(regions)
-%     % select electrodes for this region
-%     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-% 
-%     if ~isempty(chanidx)
-%         subplot(num_rows, num_cols, r)
-%         hold on
-%         plot(t, squeeze(mean(epochs(:,:,chanidx), 2)),'LineWidth',1);
-%         xline(0); yline(0)
-%         grid on
-%         title(['Region ' regions{r}])
-% 
-%         % Only show x label on bottom row
-%         if r > (num_rows-1)*num_cols
-%             xlabel('Time from onset (s)')
-%         end
-% 
-%         % Only show y label on first column
-%         if mod(r-1, num_cols) == 0
-%             ylabel('Amplitude (μV)')
-%         end
-% 
-%         set(gca, 'XTick', min(align_onset_epoch_t):0.2:max(align_onset_epoch_t))
-%         set(gca, 'FontSize', 10)
-%     end
-% end
-% sgtitle('Trial-averaged response, all electrodes grouped by region', 'FontSize', 14)
-% 
-% % Save figure
-% figureDir = fullfile(bidsRootPath, 'derivatives', 'ECoGFigures', ['sub-' subject], 'CAR_figures');
-% if ~exist(figureDir, 'dir')
-%     mkdir(figureDir);
-% end
-% saveas(gcf, fullfile(figureDir, 'all_regions_avg_onset.png'))
-% 
-% % Create full screen figure for trial-averaged responses aligned to offset
-% figure('Position', get(0, 'ScreenSize')); 
-% 
-% for r = 1:length(regions)
-%     % select electrodes for this region
-%     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-% 
-%     if ~isempty(chanidx)
-%         subplot(num_rows, num_cols, r)
-%         hold on
-%         plot(t_offset, squeeze(mean(epochs_offset(:,:,chanidx), 2)),'LineWidth',1);
-%         xlim(align_offset_epoch_t)
-%         xline(0); yline(0)
-%         grid on
-%         title(['Region ' regions{r}])
-% 
-%         % Only show x label on bottom row
-%         if r > (num_rows-1)*num_cols
-%             xlabel('Time from offset (s)')
-%         end
-% 
-%         % Only show y label on first column
-%         if mod(r-1, num_cols) == 0
-%             ylabel('Amplitude (μV)')
-%         end
-% 
-%         set(gca, 'XTick', min(align_offset_epoch_t):0.2:max(align_offset_epoch_t))
-%         set(gca, 'FontSize', 10)
-%     end
-% end
-% sgtitle('Trial-averaged response, all electrodes grouped by region', 'FontSize', 14)
-% 
-% % Save figure
-% saveas(gcf, fullfile(figureDir, 'all_regions_avg_offset.png'))
-
-% %% filter line noise and equipment noise
-% 
-% srate = channels.sampling_frequency(1); % Get sampling rate
-% 
-% % Design notch filter at 60 Hz
-% notchFilt = designfilt('bandstopiir', ...
-%     'FilterOrder', 4, ...
-%     'HalfPowerFrequency1', 59, ...
-%     'HalfPowerFrequency2', 61, ...
-%     'SampleRate', srate);
-% 
-% % Design band-stop filter for 100-130 Hz
-% bandstopFilt = designfilt('bandstopiir', ...
-%     'FilterOrder', 4, ...
-%     'HalfPowerFrequency1', 100, ...
-%     'HalfPowerFrequency2', 130, ...
-%     'SampleRate', srate);
-% 
-% % Apply filters to data
-% data_notch = filtfilt(notchFilt, double(data)')'; % First remove 60 Hz
-% data_filtered = filtfilt(bandstopFilt, data_notch')'; % Then remove 100-130 Hz
-% 
-% % Make epochs with filtered data aligned to onset
-% [epochs_filtered, t] = ecog_makeEpochs(data_filtered, events.onset, align_onset_epoch_t, srate);
-% 
-% % Plot filtered onset-aligned data for all regions in one figure
-% figure('Position', get(0, 'ScreenSize')); 
-% subplot_dims = [3, 3]; % 3x3 grid for 9 regions
-% 
-% for r = 1:length(regions)
-%     % Select electrodes for this region
-%     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-% 
-%     if ~isempty(chanidx)
-%         subplot(subplot_dims(1), subplot_dims(2), r)
-%         hold on
-%         plot(t, squeeze(mean(epochs_filtered(:,:,chanidx), 2)), 'LineWidth', 1);
-%         xline(0); yline(0)
-%         grid on
-%         title(['Region ' regions{r}])
-%         xlabel('Time from onset (s)')
-%         ylabel('Amplitude (μV)')
-%         set(gca, 'XTick', min(align_onset_epoch_t):0.1:max(align_onset_epoch_t))
-%         set(gca, 'FontSize', 10)
-%     end
-% end
-% sgtitle('Trial-averaged response (60 Hz notch, 100-130 Hz band-stop)', 'FontSize', 15)
-% 
-% % Save onset-aligned figure
-% saveas(gcf, fullfile(figureDir, 'all_regions_filtered_onset.jpg'))
-% 
-% % Make epochs with filtered data aligned to offset
-% [epochs_filtered_offset, t_offset] = ecog_makeEpochs(data_filtered, offsets, align_offset_epoch_t, srate);
-% 
-% % Plot filtered offset-aligned data for all regions in one figure
-% figure('Position', get(0, 'ScreenSize')); 
-% 
-% for r = 1:length(regions)
-%     % Select electrodes for this region
-%     chanidx = find(cellfun(@(x) ~isempty(x), strfind(channels.name, regions{r})));
-% 
-%     if ~isempty(chanidx)
-%         subplot(subplot_dims(1), subplot_dims(2), r)
-%         hold on
-%         plot(t_offset, squeeze(mean(epochs_filtered_offset(:,:,chanidx), 2)), 'LineWidth', 1);
-%         xline(0); yline(0)
-%         grid on
-%         title(['Region ' regions{r}])
-%         xlabel('Time from offset (s)')
-%         ylabel('Amplitude (μV)')
-%         xlim(align_offset_epoch_t)
-%         set(gca, 'XTick', min(align_offset_epoch_t):0.1:max(align_offset_epoch_t))
-%         set(gca, 'FontSize', 10)
-%     end
-% end
-% sgtitle('Trial-averaged response (60 Hz notch, 100-130 Hz band-stop)', 'FontSize', 15)
-% 
-% % Save offset-aligned figure
-% saveas(gcf, fullfile(figureDir, 'all_regions_filtered_offset.jpg'))
-
 
 %%  Calculate ITPC to check for phase locking
 
@@ -360,6 +202,7 @@ for chan = 1:n_chans
     % Calculate ITPC by normalizing phase angles and averaging across trials
     tf_norm = tf_complex ./ abs(tf_complex); % Normalize to unit circle
     itpc(:,:,chan) = abs(mean(tf_norm,3));
+    
     
 end
 

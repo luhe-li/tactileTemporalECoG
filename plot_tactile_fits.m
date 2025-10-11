@@ -1,5 +1,6 @@
 
 
+
 %% knobs and basic info
 
 options       = [];
@@ -36,30 +37,30 @@ specs.stim_names   = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'O
 % Generate stimulus timecourses
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(specs.stim_names, t);
 
-%% 2: Model fitting
-
-% Fitting DN/Linear model by reusing Iris' codes, removing probabilistic
-% resample step
-
-fname             = '@DN';
-modelfun          = str2func(fname);
-
-% Define options
-options.doplots   = false;
-options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display   = 'off';  % 'iter' 'final' 'off'
-options.algorithm = 'bads';
-options.fitaverage = options.average_elecs;
-options.nfits     = 1000; % if fit average
-
-% Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
-tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options);
+% %% 2: Model fitting
+% 
+% % Fitting DN/Linear model by reusing Iris' codes, removing probabilistic
+% % resample step
+% 
+% fname             = '@DN';
+% modelfun          = str2func(fname);
+% 
+% % Define options
+% options.doplots   = false;
+% options.xvalmode  = 1;      % 0 = none, 1 = stimulus leave-one-out
+% options.display   = 'off';  % 'iter' 'final' 'off'
+% options.algorithm = 'bads';
+% options.fitaverage = options.average_elecs;
+% options.nfits     = 1000; % if fit average
+% 
+% % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
+% tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options);
 
 %% 3: Model evaluation
 
 % Load data and fits
 modelfun = @DN;
-xvalmode = 0;
+xvalmode = 1;
 [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % Compute R2 and derived parameters
