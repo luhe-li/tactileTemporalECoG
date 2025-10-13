@@ -1,7 +1,7 @@
 % This script follows a0 and takes in preprocessed data (remoevd bad channel, epoched, converted to BIDS)
 
 clear;
-% tbUse tactileTemporalECoG
+tbUse tactileTemporalECoG
 
 projectDir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
 subject = 'ny726';
@@ -9,6 +9,8 @@ sessions = 'nyuecog01';
 outputFolder = 'group_ref';
 tasks = 'temporalpattern';
 runnums = [];
+figureDir = fullfile(pwd,'a6_group_reference');
+if ~exist(figureDir,'dir'); mkdir(figureDir); end
 
 %% apply group-specific reference
 [session, tasks, runnums] = bidsSpecifyData(projectDir, subject, sessions, tasks, runnums);
@@ -72,6 +74,66 @@ end
 % outputFolder      = 'groupRef_ECoGBroadband_exclude110Hz';
 % bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]; [160 170]];
 % bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], inputFolder, outputFolder);
+
+%% check frequency spectrum of epoched data
+
+dataPath = fullfile(projectDir, 'derivatives',outputFolder);
+
+% data: channel x time series across 5 runs
+[data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], tasks);
+
+% epoch by onset: time series x trial x channel
+align_onset_epoch_t = [-0.2, 1.4];  % stimulus epoch window
+[epochs, t] = ecog_makeEpochs(data, events.onset, align_onset_epoch_t, channels.sampling_frequency(1));
+
+long = find(events.duration > 0.25);
+selected_epoch = epochs(:,long,:);
+
+% Get unique electrode groups
+groups = unique(cellfun(@(x) x(1), channels.name, 'UniformOutput', false));
+
+%%
+
+figure('Position', get(0, 'ScreenSize')); 
+subplot_dims = [3,3];
+
+% Process each electrode group
+for g = 1:length(groups) 
+
+    % Find channels in this group
+    chanidx = find(startsWith(channels.name, groups{g}));
+    
+    if ~isempty(chanidx)
+        subplot(subplot_dims(1), subplot_dims(2), g)
+        hold on
+        
+        % Process each channel
+        for ch = 1:length(chanidx)
+
+            % Get time series for this channel
+            ts = squeeze(mean(selected_epoch(:,:,chanidx(ch)),2));
+            
+            % FFT
+            fs = (0:length(t)-1)./(t(end)-t(1));
+            A = abs(fft(ts,[],1));
+            
+            % Plot frequency spectrum
+            plot(fs, A, 'LineWidth', 1);
+        end
+        
+        xlim([1 150])
+        yscale('linear');
+        xline(110); % Mark carrier frequency
+        grid on
+        title(['Group ' groups{g}])
+        xlabel('Frequency (Hz)')
+        ylabel('Amplitude')
+        set(gca, 'FontSize', 15)
+    end
+end
+
+sgtitle('Group-specific rereference, averaged 1.2 s trial epochs','FontSize',20)
+saveas(gcf, fullfile(figureDir,'group-specific-ref_longtrials'),'png')
 
 %% plot broadband timecourses for temporal conditions
 

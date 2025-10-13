@@ -15,10 +15,11 @@ if ~exist(figureDir,'dir'); mkdir(figureDir); end
 
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], task);
 long = find(events.duration > 0.25);
-
+fs = channels.sampling_frequency(1);
+%%
 % epoch by onset: time series x trial x electrode
 align_onset_epoch_t     = [-0.2 0.2];  % stimulus epoch window
-[epochs, t] = ecog_makeEpochs(data, events.onset, align_onset_epoch_t, channels.sampling_frequency(1));
+[epochs, t] = ecog_makeEpochs(data, events.onset, align_onset_epoch_t, fs);
 
 % group electrode by regions
 regions = {'C','D'};
@@ -61,7 +62,7 @@ for ii = 1:length(long)
                 ts = squeeze(selected_epoch(:,1,chanidx(ch)));
                 
                 tidx = (length(t)-102):length(t);           
-                fs1 = (0:length(tidx)-1)./(t(tidx(end))-t(tidx(1)));            
+                fs1 = (0:length(tidx)-1)./(t(tidx(end))-t(tidx(1)));
                 A1 = abs(fft(ts(tidx)));
                 P1 = angle(fft(ts(tidx)));                      
                 [~, carrierIDX]=min(abs(fs1-110));
@@ -84,7 +85,9 @@ for ii = 1:length(long)
                 plot(fs1, A1, fs2, A2, 'LineWidth', 1);
             end
             
-            xlim([50 200])
+            xlabel('Frequency')
+            ylabel('Amplitude')
+            xlim([1 150])
             yscale('linear');
             xline(110);
             grid on
@@ -94,6 +97,7 @@ for ii = 1:length(long)
     end
     
     sgtitle(sprintf('Trial %d - Onset aligned', current_trial), 'FontSize', 14)
+    
     % Plot compass plots with all channels from all regions
     subplot(subplot_dims(1), subplot_dims(2),3)
     compassplot([Pcarrier1(:)'; Pcarrier2(:)']', [Acarrier1(:)'; Acarrier2(:)']',linewidth=3);
@@ -101,7 +105,6 @@ for ii = 1:length(long)
     legend('Stim', 'Blank')
 
     subplot(subplot_dims(1), subplot_dims(2),4)
-   
     compassplot([Pcarrier1_c(:)'; Pcarrier2_c(:)']', [Acarrier1_c(:)'; Acarrier2_c(:)']',linewidth=3);
      title('125 Hz')
     legend('Stim', 'Blank')
