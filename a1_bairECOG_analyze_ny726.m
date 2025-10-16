@@ -9,7 +9,7 @@ subject = 'ny726';
 % addpath(genpath('/Users/luhe/Documents/GitHub/fieldtrip/utilities/'))
 
 %% common average reference (do it once)
-% bidsEcogRereference(projectDir, subject);
+% bidsEcogRereferencååe(projectDir, subject);
 
 %% extract/check broadband (do it once)
 
