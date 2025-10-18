@@ -19,7 +19,6 @@ fprintf('[%s] Starting group-averaging for subject: %s session: %s\n', mfilename
 % define paths
 writePath = fullfile(projectDir, 'derivatives', outputFolder);
 
-
 for jj = 1:length(tasks)
     for kk = 1:length(runnums{jj})
 
@@ -48,12 +47,17 @@ for jj = 1:length(tasks)
             % Find channels belonging to this group
             chan_index = startsWith(channels.name, groups{g});
 
-            % Only include good channels in the reference
-            good_channels = find(contains(channels(chan_index,:).status, 'good'));
+            if ~isempty(chan_index)
 
-            % The mean of the good channels is regressed out of all channels
-            % (i.e. including the bad ones)
-            temp = ecog_carRegress(data(chan_index,:), good_channels);
+                % Include only good_channels in the common average:
+                good_channels = find(contains(channels(chan_index,:).status, 'good'));
+
+                % Subtract the mean of good channels of all channels
+                good_channel_mean = mean(data_reref(good_channels,:));
+                temp = data_reref(chan_index,:) - good_channel_mean;
+
+            end
+
             data_reref(chan_index,:) = temp;
             channels_reref.reference(chan_index,:) = {'group_ref'};
         end
@@ -68,16 +72,16 @@ for jj = 1:length(tasks)
     end
 end
 
-%%
-% %% extract/check broadband (do it once)
-% inputFolder = 'group_ref';
-% outputFolder      = 'groupRef_ECoGBroadband_exclude110Hz';
-% bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]; [160 170]];
-% bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], inputFolder, outputFolder);
+%
+%% extract/check broadband (do it once)
+inputFolder = 'group_ref';
+outputFolder      = 'groupRef_ECoGBroadband_exclude110Hz';
+bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]; [160 170]];
+bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], inputFolder, outputFolder);
 
 %% check frequency spectrum of epoched data
 
-dataPath = fullfile(projectDir, 'derivatives',outputFolder);
+dataPath = fullfile(projectDir, 'derivatives', outputFolder);
 
 % data: channel x time series across 5 runs
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, [], tasks);
