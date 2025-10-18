@@ -2,20 +2,27 @@
 clear;
 tbUse tactileTemporalECoG
 
-projectDir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile'; 
+projectDir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
 subject = 'ny726';
+
+sessions = 'nyuecog01';
+outputFolder = 'demean_CAR';
+tasks = 'temporalpattern';
+runnums = [];
 
 % addpath(genpath('/Users/luhe/Documents/GitHub/fieldtrip/fileio/'))
 % addpath(genpath('/Users/luhe/Documents/GitHub/fieldtrip/utilities/'))
 
-%% common average reference (do it once)
-% bidsEcogRereference(projectDir, subject);
+% %% apply demean CAR (do it one)
+% 
+% bidsEcogRereference(projectDir, subject, sessions, tasks, runnums, outputFolder)
 
-%% extract/check broadband (do it once)
-
-outputFolder      = 'ECoGBroadband_exclude110Hz';
-bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]; [160 170]];
-bidsEcogBroadband(projectDir, subject, [], [], [], bands, [], [], outputFolder);
+% %% extract/check broadband (do it once)
+% 
+% inputFolder       = 'demean_CAR';
+% outputFolder      = 'ECoGBroadband_exclude110Hz';
+% bands             = [[70 80]; [80 90]; [90 100]; [130 140]; [140 150]; [150 160]; [160 170]];
+% bidsEcogBroadband(projectDir, subject, sessions, tasks, [], bands, [], inputFolder, outputFolder);
 
 %% plot broadband timecourses for temporal conditions
 
@@ -34,9 +41,6 @@ specs.epoch_t     = [-0.4 1.8]; % stimulus epoch window
 specs.base_t      = [-0.4 -0.1]; % blank epoch window
 specs.plot_ylim   = [-2 20];
 
-% all channels on the gri
-% specs.subplotdims = [4 8];
-% specs.subplotidx  = 1:32;
 specs.plot_type   = 'average';
 
 specs.chan_names  = {'V','W','Y','Z'}; % First half of electrodes
