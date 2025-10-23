@@ -11,7 +11,6 @@ addpath(ft_path);
 ft_defaults;
 
 code_ = 'ny726';
-
 %% load 
 load('ny726_data');
 
@@ -93,7 +92,6 @@ all(cellfun(@strcmp, ieeg.elec.label, ieeg.label)), ...
 'Mismatch found between ieeg.elec.label and ieeg.label');
 
 save ieeg ieeg
-
 %% annotate strong artifacts that may mess up the ica computation
 
 cfg = []
@@ -147,10 +145,10 @@ mixing          = inv(unmixing);
 used_labels     = tst.label;
 
 % also.. save the unmixing matrix and the used_labels
+
 cfg = [];
 cfg.unmixing = unmixing;
 cfg.topolabel = ieeg.label;
-
 % apply umixing matrix to actual data
 data_comp2 = ft_componentanalysis(cfg, ieeg);
 
@@ -181,7 +179,6 @@ set(gca, 'YTick',1:numel(used_labels));
 set(gca, 'YTickLabel', used_labels);
 set(gcf, 'Color', 'w');
 saveas(gcf, fullfile(sprintf('Comp_LOADINGS.png')))
-
 %% estimated the "broadness" 
 chi_val = sum(bsxfun(@rdivide, ((bsxfun(@minus,abs(mixing),  mean(abs(mixing),1))).^2), ...
     mean(abs(mixing),1)),1);

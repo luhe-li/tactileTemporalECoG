@@ -19,19 +19,25 @@ RawDataDir  = '/Volumes/server/Projects/BAIR/Data/Raw/ECoG/';
 BIDSDataDir = '/Volumes/server/Projects/BAIR/Data/BIDS/';
 
 % BIDS specs: assuming defaults for a first session, full visual set:
-projectName = 'tactile_ecog_recoded';
-sub_label   = 'p15'; % Specify patient's code name here
+projectName = 'tactile';
+sub_label   = 'ny888'; % Specify patient's code name here
 ses_label   = 'nyuecog01';
 ses_labelt1 = 'som3t01';
 acq_label   = 'clinical';
-task_label  = {'tactiletemporal', ...
-               'tactiletemporal', ...
-               'tacttestascending', ...
-               'tacttestdescending', ...
-               'tacttestascending', ...
-               'tacttestdescending', ...
+% task_label  = {'tactiletemporal', ...
+%                'tactiletemporal', ...
+%                'tacttestascending', ...
+%                'tacttestdescending', ...
+%                'tacttestascending', ...
+%                'tacttestdescending', ...
+%               };              
+% run_label = {'01','02','01','01','02','02'};
+task_label  = {'temporalpattern', ...
+               'temporalpattern', ...
+               'temporalpattern',... % only included the main task
               };              
-run_label = {'01','02','01','01','02','02'};
+run_label = {'01','01','01'};
+
 % NOTE: task and run labels should be noted in the order they were run!
 
 % Make plots?
@@ -59,16 +65,16 @@ makePlot = 1;
 %% DATA TRIM (PATIENT- and SESSION-SPECIFIC)
 
 % Define the trigger channel name (probably a 'DC' channel, see hdr.label).
-triggerChannelName = 'DC1';
-triggerChannel = find(strcmp(triggerChannelName,hdr.label));
-figure;plot(rawdata(triggerChannel,:)); 
-title([num2str(triggerChannel) ': ' hdr.label{triggerChannel}]);
-        
-run_start = []; % Manually determined from plot of triggerchannel 
-run_end   = []; 
+triggerChannel = find(contains(hdr.label,'DC1'));
+run_start1 = 413883; % Manually determined from plot of triggerchannel 
+run_end1   = 760267; 
+run_start2 = 1275010;
+run_end2 = 1464570;
 
 % Clip the data
-data = rawdata(:,run_start:run_end);
+data1 = rawdata(:,run_start1:run_end1);
+data2 = rawdata(:,run_start2:run_end2);
+data = [data1, data2];
 hdr.nSamples = size(data,2);
 
 % Check if we have all the triggers we want
@@ -98,7 +104,7 @@ end
 
 % This is a list of to be excluded channels from CAR; will be labeled as
 % 'bad' in the channels tsv file
-exclude_inx = []; % e.g. 6 12 13 87
+exclude_inx = [2, 36, 139, 145, 166]; % e.g. 6 12 13 87
 
 % Specify reasons for marked as bad, e.g. spikes, elipeptic,
 % outlierspectrum, lowfreqdrift
@@ -145,6 +151,7 @@ if makePlot
 end
 
 %% [2] Look at spectra with bad channels excluded:
+
 badChannels = cell2mat(BADCHANNELS_MANUALTABLE(:,1));
 badChannelsDescriptions = BADCHANNELS_MANUALTABLE(:,2);
 
