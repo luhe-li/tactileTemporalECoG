@@ -63,7 +63,7 @@ modelfun = @LINEAR; % or @DN
 
 % Define parameters
 options.doplots   = true;
-options.xvalmode  = 1;      % 0 = none, 1 = stimulus leave-one-out
+options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'iter';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 options.average_elecs = true;
