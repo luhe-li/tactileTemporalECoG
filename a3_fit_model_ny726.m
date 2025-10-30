@@ -1,7 +1,6 @@
 
 clear;
 tbUse tactileTemporalECoG
-addpath(genpath(pwd, 'codes'))
 
 compute     = false;
 bidsDir     = tt_bidsRootPath;
@@ -27,29 +26,34 @@ specs.stim_names   = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4'
 % Generate stimulus timecourses
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(specs.stim_names, t);
 
-%% 2. Fit model to the s1 and m1 data
+%% 2. Fit model to the electrode averaged 
 
-
-modelfun = '@DN';
+% modelfun          = {@DN,@LINEAR};
+modelfun = @LINEAR;
 
 % Define parameters
 options.doplots   = true;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display   = 'iter';  % 'iter' 'final' 'off'
+options.display   = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 options.average_elecs = true;
 options.fitaverage = true;
-options.nfits     = 100; % if fit average
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
-tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options);
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
 
-%% 3. Evaluate model fits
+%% 3. Plot model fits
 
 xvalmode = 1;
 datatype = 'electrodeaverages';
 
 [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
+
+% Compute R2 and derived parameters
+objFunction = modelfun;
+includeDerivedParams = false;
+[results] = tt_evaluateModelFit(D,includeDerivedParams);
+
 
 saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
 tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})

@@ -1,5 +1,5 @@
 function [data_slc, channels, t, srate] = tt_prepareData(projectDir, subject, sessions, tasks, runnums, ...
-    inputFolder, description, specs)
+    inputFolder, description, specs, srate_slc)
 
 % <projectDir>
 if ~exist('projectDir', 'var') || isempty(projectDir)
@@ -14,6 +14,7 @@ end
 if ~exist('sessions', 'var'), sessions = []; end
 if ~exist('tasks', 'var'), tasks = []; end
 if ~exist('runnums', 'var'), runnums = []; end
+if ~exist('srate_slc', 'var'), srate_slc = []; end
 
 % <inputFolder>
 if ~exist('inputFolder', 'var') || isempty(inputFolder)
@@ -43,7 +44,7 @@ if ~isfield(specs,'average_stims') || isempty(specs.average_stims), specs.averag
 dataPath = fullfile(projectDir, 'derivatives', inputFolder);
 writePath = fullfile(projectDir, 'derivatives', 'modelFit', 'figure', subject);
 
-[data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description);
+[data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description, srate_slc);
 
 % Select channels
 chan_names = specs.chan_names;
