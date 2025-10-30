@@ -1,6 +1,6 @@
 
-clear;
-tbUse tactileTemporalECoG
+% clear;
+% tbUse tactileTemporalECoG
 
 compute     = false;
 bidsDir     = tt_bidsRootPath;
@@ -28,12 +28,13 @@ specs.stim_names   = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4'
 
 %% 2. Fit model to the electrode averaged 
 
-modelfun          = {@DN,@LINEAR};
+% modelfun          = {@DN,@LINEAR};
+modelfun = @LINEAR;
 
 % Define parameters
 options.doplots   = true;
-options.xvalmode  = 1;      % 0 = none, 1 = stimulus leave-one-out
-options.display   = 'off';  % 'iter' 'final' 'off'
+options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.display   = 'iter';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 options.average_elecs = true;
 options.fitaverage = true;
@@ -52,7 +53,6 @@ datatype = 'electrodeaverages';
 objFunction = modelfun;
 includeDerivedParams = false;
 [results] = tt_evaluateModelFit(D,includeDerivedParams);
-
 
 saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
 tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})
