@@ -64,7 +64,7 @@ tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [
 
 % Load data and fits
 modelfun = @DN;
-xvalmode = 0;
+xvalmode = 1;
 [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
 
 % Compute R2 and derived parameters

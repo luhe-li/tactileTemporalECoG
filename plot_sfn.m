@@ -3,7 +3,7 @@
 % Model fits of average-electrode are under bidsRootPath/derivatives/modelFit/results
 
 %% 
-server_available = false;
+server_available = true;
 if server_available 
     bids_dir     = tt_bidsRootPath;
     data_dir = fullfile(bids_dir, 'derivatives', 'modelFit', 'results');
@@ -23,7 +23,7 @@ modelColors = [218, 62, 82; 45, 125, 210]./255; % red and blue
 %% Load all data
 
 models_to_plot = {'DN', 'LINEAR'};
-str = 'ny726';
+str = 'group_average';
 
 %% Evaluate cross-valiedated R2
 

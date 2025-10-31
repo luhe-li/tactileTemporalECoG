@@ -59,28 +59,28 @@ channel = vertcat(channel1, channel2);
 % Generate stimulus timecourses, using the stimulus info file of nyu patients
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(nyu_stim_names, t);
 
-modelfun = @LINEAR; % or @DN
+modelfun = {@DN, @LINEAR};
 
 % Define parameters
 options.doplots   = true;
-options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display   = 'iter';  % 'iter' 'final' 'off'
-options.algorithm = 'bads';
+options.xvalmode  = 1;      % 0 = none, 1 = stimulus leave-one-out
+options.display   = 'off';  % 'iter' 'final' 'off'
+options.algorithm = 'fmincon';
 options.average_elecs = true;
 options.fitaverage = true;
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
 tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], 'group_average');
 
-%% 4. Model evaluation
-
-% Load data and fits
-modelfun = @DN;
-xvalmode = 1;
-datatype = 'electrodeaverages';
-[D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
-
-% Compute R2 and derived parameters
-objFunction = modelfun;
-includeDerivedParams = false;
-[results] = tt_evaluateModelFit(D,includeDerivedParams);
+% %% 4. Model evaluation
+% 
+% % Load data and fits
+% modelfun = @DN;
+% xvalmode = 1;
+% datatype = 'electrodeaverages';
+% [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
+% 
+% % Compute R2 and derived parameters
+% objFunction = modelfun;
+% includeDerivedParams = false;
+% [results] = tt_evaluateModelFit(D,includeDerivedParams);
