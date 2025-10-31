@@ -59,14 +59,15 @@ channel = vertcat(channel1, channel2);
 % Generate stimulus timecourses, using the stimulus info file of nyu patients
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(nyu_stim_names, t);
 
-modelfun = {@DN, @LINEAR};
+% modelfun = {@DN, @LINEAR};
+modelfun = @DN;
 
 % Define parameters
 options.doplots   = true;
 options.xvalmode  = 1;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'fmincon';
-options.average_elecs = true;
+options.average_elecs = false;
 options.fitaverage = true;
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder

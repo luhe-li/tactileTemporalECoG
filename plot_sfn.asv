@@ -133,7 +133,7 @@ end
 %% parameter estimates
 
 % Load individual electrode data for parameter comparison
-tactile_group = load(fullfile(data_dir,'DN_xvalmode0_individualelectrode_group_average.mat'), ...
+tactile_indiv = load(fullfile(data_dir,'DN_xvalmode0_individualelecs_group_average.mat'), ...
                      'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params');
 visual_indiv = load(fullfile(pwd, 'model_results/visual', 'DN_xvalmode0_individualelecs.mat'), ...
                     'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params');
@@ -161,7 +161,7 @@ end
 
 % Compute tactile summary statistics with bootstrap CI
 nboot = 10000;
-tactile_means = mean(tactile_group.params(paramSlc,:), 2);
+tactile_means = mean(tactile_indiv.params(paramSlc,:), 2);
 tactile_ci = nan(length(paramSlc), 2);
 
 % Bootstrap confidence intervals
