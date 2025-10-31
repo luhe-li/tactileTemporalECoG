@@ -18,11 +18,10 @@ end
 
 modelColors = [218, 62, 82; 45, 125, 210]./255; % red and blue
 
-
 %% Load all data
 
 models_to_plot = {'DN', 'LINEAR'};
-str = 'group_average'; %umcudrouwen or ny726
+str = 'umcudrouwen'; %umcudrouwen/ny726/group_average
 
 %% Evaluate cross-valiedated R2
 
@@ -57,7 +56,7 @@ for dd = 1:length(models_to_plot)
     %% Plot timecourses
 
     tcourseFig = figure('Color', [1 1 1], 'Position', [30 + (dd-1)*750, 300, 900, 400]);
-    set(tcourseFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[700 400])
+    set(tcourseFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[1000 400])
     T1 = tiledlayout(2, 1,'TileIndexing','rowmajor');
 
     % Combine pulse conditions
@@ -126,15 +125,15 @@ for dd = 1:length(models_to_plot)
     end
 
     % Save figures
-    saveas(tcourseFig, fullfile(fig_dir, sprintf('timecourse_%s_%s', model, str)), 'pdf');
+    saveas(tcourseFig, fullfile(fig_dir, sprintf('%s_%s_timecourse', str, model)), 'pdf');
 
 end
 
 %% parameter estimates
 
 % Load individual electrode data for parameter comparison
-tactile_group = load(fullfile(data_dir,'DN_xvalmode0_individualelectrode_group_average.mat'), ...
-                     'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params');
+tactile_indiv = load(fullfile(data_dir,sprintf('DN_xvalmode0_individualelecs_%s.mat', str)), ...
+                     'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params'); % Always the full fit to individual electrodes
 visual_indiv = load(fullfile(pwd, 'model_results/visual', 'DN_xvalmode0_individualelecs.mat'), ...
                     'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params');
 
@@ -161,7 +160,7 @@ end
 
 % Compute tactile summary statistics with bootstrap CI
 nboot = 10000;
-tactile_means = mean(tactile_group.params(paramSlc,:), 2);
+tactile_means = mean(tactile_indiv.params(paramSlc,:), 2);
 tactile_ci = nan(length(paramSlc), 2);
 
 % Bootstrap confidence intervals
@@ -216,14 +215,14 @@ for n = 1:numel(paramSlc)
     box off
 
     if p == 1; ylim([0 0.1]); end
-        if p == 2; ylim([0 0.6]); end
+        if p == 2; ylim([0 0.8]); end
         if p == 3; ylim([0 0.4]); end
         if p == 4; ylim([0.8 2]); end
-        if p == 5; ylim([0 0.1]); end
+        if p == 5; ylim([0 0.15]); end
         if p == 6; ylim([0 0.15]); end
         if p == 7; ylim([0 4]); end
 
 end
 
 % Save figures
-saveas(paramFig, fullfile(fig_dir, 'parameters_comparison'), 'pdf');
+saveas(paramFig, fullfile(fig_dir, sprintf('%s_parameters_comparison',str)), 'pdf');

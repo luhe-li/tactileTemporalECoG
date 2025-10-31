@@ -1,6 +1,6 @@
 
-% clear;
-% tbUse tactileTemporalECoG
+clear;
+tbUse tactileTemporalECoG
 
 compute     = false;
 bidsDir     = tt_bidsRootPath;
@@ -26,34 +26,27 @@ specs.stim_names   = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4'
 % Generate stimulus timecourses
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(specs.stim_names, t);
 
-%% 2. Fit model to the electrode averaged 
+%% 2. Model fitting to average electrodes, both models, both full fit and crossvalidation
 
-% modelfun          = {@DN,@LINEAR};
-modelfun = @LINEAR;
+modelfun          = {@DN,@LINEAR};
 
 % Define parameters
-options.doplots   = true;
+options.doplots   = false;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'iter';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 options.average_elecs = true;
-options.fitaverage = true;
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
 tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
 
-%% 3. Plot model fits
+% Do crossvalidation
+options.xvalmode  = 1;
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
 
-xvalmode = 1;
-datatype = 'electrodeaverages';
+%% 3. Model fitting to each electrodes, DN model and full fit only to get parameter estimates confidence interval
 
-[D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
-
-% Compute R2 and derived parameters
-objFunction = modelfun;
-includeDerivedParams = false;
-[results] = tt_evaluateModelFit(D,includeDerivedParams);
-
-saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
-tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})
-tt_plotTactileVisualParams(D, modelfun, saveDir);
+modelfun          = @DN;
+options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.average_elecs = false;
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);

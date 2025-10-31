@@ -33,6 +33,7 @@ if ~exist('options', 'var') || isempty(options), options = struct(); end
 if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorithm = 'bads'; end
 if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
 if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
+if ~isfield(options,'n_run') || isempty(options.n_run), options.n_run = 7; end
 
 % Some formatting
 if iscell(objFunction), objFunction = objFunction{1}; end
@@ -42,9 +43,13 @@ if ~isfield(options,'startprm') || isempty(options.startprm)
 	fprintf('[%s] Loading default starting values and bounds for model %s \n', mfilename, func2str(objFunction));
     options.startprm = loadjson(fullfile(tt_RootPath, 'models', sprintf('%s.json', func2str(objFunction))));
 end
-x0 = options.startprm.x0;
 lb = options.startprm.lb;
 ub = options.startprm.ub;
+
+% Get n_run grid initializations for the optimizer
+n_run = options.n_run;
+inits = getInit(lb, ub, n_run*2, n_run);
+
 pnames = strsplit(options.startprm.params,',');
 
 % Check if plausible bounds are defined
@@ -67,7 +72,7 @@ fprintf('[%s] Algorithm = %s \n', mfilename, options.algorithm);
 nTimepts    = size(data,1);
 nStim       = size(data,2);
 nDatasets   = size(data,3);
-nParams     = size(x0,2);
+nParams     = size(inits,2);
 pred        = nan(nTimepts, nStim, nDatasets);
 params      = nan(nParams,nDatasets);
 
@@ -108,44 +113,43 @@ for ii = 1:nDatasets % loop over channels or channel averages
 %             fprintf('[%s] Fold %d: Fitting on stimulus %s \n', mfilename, jj-1, num2str(fit_inx)) 
 %             fprintf('[%s] Fold %d: Predicting for stimulus %s \n', mfilename, jj-1, num2str(pred_inx));
 %         end
+
+            all_prm = zeros(n_run, nParams);
+            all_rmse = zeros(1, n_run);
+            % Search for best-fitting parameters
+            switch options.algorithm
+                case 'bads'
+                    % Set optimization options
+                    searchopts = optimset('Display',options.display);
+                    searchopts.MaxIterations = 10000;
+                    searchopts.MaxFunctionEvaluations = 10000;
+                    parfor kk = 1:n_run
+                        temp_objFunction = objFunction;
+                        [all_prm(kk,:), all_rmse(kk)] = bads(@(x) temp_objFunction(x, data2fit, stim2fit, srate), inits(kk,:), lb, ub, plb, pub, [], searchopts);
+                    end
+                    [~, best_idx] = min(all_rmse);
+                    prm = all_prm(best_idx,:);
+                case 'fmincon'
+                    searchopts = optimoptions(@fmincon, 'Algorithm', 'sqp');
+                    searchopts.MaxIterations = 10000;
+                    searchopts.MaxFunctionEvaluations = 10000;
+                    searchopts.Display = options.display;
+                    problem.objective = @(x) objFunction(x, data2fit, stim2fit, srate);
+                    problem.solver = 'fmincon';
+                    problem.lb = lb;
+                    problem.ub = ub;
+                    problem.options = searchopts;
+                    parfor kk = 1:n_run
+                        temp_problem = problem;
+                        temp_problem.x0 = inits(kk,:);
+                        [all_prm(kk), all_rmse(kk)] = fmincon(temp_problem);
+                    end
+                    [~, best_idx] = min(all_rmse);
+                    prm = all_prm(best_idx,:);
+                otherwise
+                    error('[%s] Fitting algorithm not recognized \n', mfilename);
+            end
         
-        % Search for best-fitting parameters
-        switch options.algorithm
-            case 'bads'
-                % Set optimization options
-                searchopts = optimset('Display',options.display);
-                searchopts.MaxIterations = 10000;
-                searchopts.MaxFunctionEvaluations = 10000;
-                prm = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
-            case 'lsqnonlin'
-                searchopts.Algorithm = 'levenberg-marquardt';
-                searchopts = optimoptions(@lsqnonlin,'Algorithm','levenberg-marquardt');
-                searchopts.MaxIterations = 10000;
-                searchopts.MaxFunctionEvaluations = 10000;
-                searchopts.Display = options.display;
-                prm = lsqnonlin(@(x) objFunction(x, data2fit, stim2fit, srate), x0, lb, ub, searchopts);
-            case 'fmincon'
-                searchopts = optimoptions(@fmincon, 'Algorithm', 'sqp');
-                searchopts.MaxIterations = 10000;
-                searchopts.MaxFunctionEvaluations = 10000;
-                searchopts.Display = options.display;
-                problem.objective = @(x) objFunction(x, data2fit, stim2fit, srate);
-                problem.x0 = x0;
-                problem.solver = 'fmincon';
-                problem.lb = lb;
-                problem.ub = ub;
-                problem.options = searchopts;
-                prm = fmincon(problem);
-            case 'surrogateopt' 
-                searchopts = optimoptions('surrogateopt','PlotFcn',[], "ConstraintTolerance",1e-6);
-                searchopts.MaxFunctionEvaluations = 10000;
-                searchopts.Display = options.display;
-                intcon = contains(pnames, 'n_irf');
-                if any(intcon), intcon_idx = find(intcon); else, intcon_idx = []; end
-                prm = surrogateopt(@(x) objFunction(x, data2fit, stim2fit, srate),lb,ub,intcon_idx,searchopts);       
-            otherwise
-                error('[%s] Fitting algorithm not recognized \n', mfilename);
-        end
         
         % Save params from full model fit
         if jj == 1, params(:,ii) = prm; end

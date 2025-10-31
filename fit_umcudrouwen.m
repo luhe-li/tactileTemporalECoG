@@ -1,16 +1,6 @@
 
-
-
 %% knobs and basic info
-
 options       = [];
-options.average_elecs = true;
-
-if options.average_elecs
-    datatype = 'electrodeaverages'; 
-else
-    datatype = 'individualelecs';
-end
 
 % Load or (re)compute the processed data
 compute     = false;
@@ -43,42 +33,52 @@ end
 % Generate stimulus timecourses
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(specs.stim_names, t);
 
-%% 2: Model fitting
+%% 2: Model fitting to average electrodes, both models, both full fit and crossvalidation
 
 % Fitting DN/Linear model by reusing Iris' codes, removing probabilistic
 % resample step
-
 modelfun          = {@DN,@LINEAR};
 
 % Define options
 options.doplots   = false;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
-options.display   = 'off';  % 'iter' 'final' 'off'
-options.algorithm = 'fmincon';
-options.fitaverage = options.average_elecs;
+options.display   = 'iter';  % 'iter' 'final' 'off'
+options.algorithm = 'bads';
+options.average_elecs = true;
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
 tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
 
-%% 3: Model evaluation
+% Do crossvalidation
+options.xvalmode  = 1;
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
 
-% Load data and fits
-modelfun = @DN;
-xvalmode = 0;
-[D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
+%% 3. Model fitting to each electrodes, DN model only to get parameter estimates confidence interval
 
-% Compute R2 and derived parameters
-objFunction = modelfun;
-includeDerivedParams = false;
-[results] = tt_evaluateModelFit(D,includeDerivedParams);
+modelfun          = @DN;
+options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.average_elecs = false;
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
 
-%% 4. Plot timecourses of data and fits
-
-% Provide a directory to save figures (optional)
-saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
-
-% Plot multiple model predictions (superimposed)
-tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})
+% %% 4: Model evaluation
+% 
+% % Load data and fits
+% modelfun = @DN;
+% xvalmode = 0;
+% [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
+% 
+% % Compute R2 and derived parameters
+% objFunction = modelfun;
+% includeDerivedParams = false;
+% [results] = tt_evaluateModelFit(D,includeDerivedParams);
+% 
+% %% 4. Plot timecourses of data and fits
+% 
+% % Provide a directory to save figures (optional)
+% saveDir = fullfile(bidsDir, 'derivatives', 'modelFit', 'figure', subject);
+% 
+% % Plot multiple model predictions (superimposed)
+% tt_plotDataAndFits(results, D.data, D.channels, D.stim, D.stim_info, D.t, D.options, saveDir, {'ONEPULSE', 'TWOPULSE'})
 
 % %% 5. Plot summed response of data and fits
 % 

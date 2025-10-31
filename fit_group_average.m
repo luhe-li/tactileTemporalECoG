@@ -20,7 +20,7 @@ specs.plot_data    = false;
 specs.plot_smooth  = 1; % could try some other values
 specs.epoch_t      = [-0.4, 1.8]; % stimulus epoch window
 specs.base_t       = [-0.4 -0.1]; % blank epoch window
-specs.chan_names   = {'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'W4','W5','W6','W9','W10','W11','W12','P3','P5','Z9','Z10','Z13','Z14','Z15','S9','S10'};
+specs.chan_names   = {'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'W4','W5','W6','W9','W10','W11','W12','P3','P5','Z9','Z10','Z13','Z14','Z15','S9','S10'};
 specs.stim_names   = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4', 'ONE-PULSE-5', 'ONE-PULSE-6',...
     'TWO-PULSE-1', 'TWO-PULSE-2', 'TWO-PULSE-3', 'TWO-PULSE-4', 'TWO-PULSE-5', 'TWO-PULSE-6'};
 nyu_stim_names     = specs.stim_names;
@@ -54,34 +54,35 @@ assert(size(data1,1) == size(data2,1))
 data = cat(3, data1, data2);
 channel = vertcat(channel1, channel2);
 
-%% 3. Fit model to the data averaged between patients, across electrodes
+%% 3. Model fitting to average electrodes, both models, both full fit and crossvalidation
+
+% Use a different ending string
+str = 'group_average';
 
 % Generate stimulus timecourses, using the stimulus info file of nyu patients
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(nyu_stim_names, t);
 
-% modelfun = {@DN, @LINEAR};
-modelfun = @DN;
+modelfun = {@DN, @LINEAR};
 
 % Define parameters
-options.doplots   = true;
+options.doplots   = false;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'off';  % 'iter' 'final' 'off'
-options.algorithm = 'fmincon';
-options.average_elecs = false;
-options.fitaverage = true;
+options.algorithm = 'bads';
+options.average_elecs = true;
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
-tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], 'group_average');
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], str);
 
-% %% 4. Model evaluation
-% 
-% % Load data and fits
-% modelfun = @DN;
-% xvalmode = 1;
-% datatype = 'electrodeaverages';
-% [D] = tt_loadDataForFigure(modelfun, xvalmode, datatype);
-% 
-% % Compute R2 and derived parameters
-% objFunction = modelfun;
-% includeDerivedParams = false;
-% [results] = tt_evaluateModelFit(D,includeDerivedParams);
+% Do crossvalidation
+options.xvalmode  = 1;
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], str);
+
+%% 4. Model fitting to each electrodes, DN model and full fit only to get parameter estimates confidence interval
+
+modelfun          = @DN;
+options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.average_elecs = false;
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], str);
+
+
