@@ -21,7 +21,7 @@ modelColors = [218, 62, 82; 45, 125, 210]./255; % red and blue
 %% Load all data
 
 models_to_plot = {'DN', 'LINEAR'};
-str = 'umcudrouwen'; %umcudrouwen/ny726/group_average
+str = 'group_average'; %umcudrouwen/ny726/group_average
 
 %% Evaluate cross-valiedated R2
 
