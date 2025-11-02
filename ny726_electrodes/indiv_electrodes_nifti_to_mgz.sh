@@ -28,16 +28,16 @@ for ELEC_NII in ${ELEC_DIR}/*_elec_bin_T1_*.nii.gz; do
     fi
 
 
-    # Intersect electrode mask with the right postcentral mask
-    mri_and \
-        ${SUBJECTS_DIR}/mri/${base}.mgz \
-        ${SUBJECTS_DIR}/mri/rh_postcentral_mask.mgz \
-        ${SUBJECTS_DIR}/mri/${base}_in_rh_postcentral.mgz
+    # # Intersect electrode mask with the right postcentral mask
+    # mri_and \
+    #     ${SUBJECTS_DIR}/mri/${base}.mgz \
+    #     ${SUBJECTS_DIR}/mri/rh_postcentral_mask.mgz \
+    #     ${SUBJECTS_DIR}/mri/${base}_in_rh_postcentral.mgz
 
-    # Get label summary (which atlas labels overlap with electrodes)
-    mri_segstats \
-        --seg ${LABELS} \
-        --mask ${SUBJECTS_DIR}/mri/${base}.mgz \
-        --ctab $FREESURFER_HOME/FreeSurferColorLUT.txt \
-        --sum ${SUBJECTS_DIR}/stats/${base}_in_labels.stats
+    # # Get label summary (which atlas labels overlap with electrodes)
+    # mri_segstats \
+    #     --seg ${LABELS} \
+    #     --mask ${SUBJECTS_DIR}/mri/${base}.mgz \
+    #     --ctab $FREESURFER_HOME/FreeSurferColorLUT.txt \
+    #     --sum ${SUBJECTS_DIR}/stats/${base}_in_labels.stats
 done
