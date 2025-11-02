@@ -1,5 +1,6 @@
+clear
 
-tbUse ECoG_utils;
+% tbUse ECoG_utils;
 
 bidsRootPath = tt_bidsRootPath;
 subject = 'umcudrouwen';
