@@ -4,5 +4,6 @@ export SUBJECTS_DIR=${WORK_DIR}/derivatives/freesurfer
 
 freeview -v ${SUBJECTS_DIR}/sub-${SUBJID}/mri/T1.mgz \
              ${SUBJECTS_DIR}/sub-${SUBJID}/mri/brainmask.mgz \
-          -f ${SUBJECTS_DIR}/sub-${SUBJID}/surf/lh.white:edgecolor=blue \
-             ${SUBJECTS_DIR}/sub-${SUBJID}/surf/lh.pial:edgecolor=red
+          -f ${SUBJECTS_DIR}/sub-${SUBJID}/surf/rh.white:edgecolor=blue \
+             ${SUBJECTS_DIR}/sub-${SUBJID}/surf/rh.pial:edgecolor=red
+             ${SUBJECTS_DIR}/sub-${SUBJID}/surf/rh.glasser16_atlas.mgz
