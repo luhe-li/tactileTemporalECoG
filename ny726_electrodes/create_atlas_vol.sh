@@ -6,7 +6,7 @@ export SUBJECTS_DIR=${WORK_DIR}/derivatives/freesurfer
 export LABEL_DIR=${SUBJECTS_DIR}/${SUBJID}/label
 export ROI_SAVE_DIR=${WORK_DIR}/derivatives/roiVols/${SUBJID}
 
-export DO_IMPORT_NATIVESPACE=1
+export DO_IMPORT_NATIVESPACE=0
 
 if [ "$DO_IMPORT_NATIVESPACE" -eq 1 ]; then
 
@@ -20,19 +20,20 @@ if [ "$DO_IMPORT_NATIVESPACE" -eq 1 ]; then
 	mri_annotation2label --subject $SUBJID --hemi lh --annotation Glasser2016 --outdir ${SUBJECTS_DIR}/${SUBJID}/label/Glasser2016
 fi
 
-# # Convert annotation to volume (per hemisphere)
-# mkdir -p ${ROI_SAVE_DIR}
-# for hemi in lh rh; do
-#     mri_label2vol \
-#       --o ${ROI_SAVE_DIR}/${hemi}.Glasser2016.VOL.nii.gz \
-#       --annot ${LABEL_DIR}/${hemi}.Glasser2016.annot \
-#       --temp ${SUBJECTS_DIR}/${SUBJID}/mri/T1.mgz \
-#       --fillthresh 0.5 \
-#       --proj frac 0 1 0.1 \
-#       --subject ${SUBJID} \
-#       --hemi ${hemi} \
-#       --regheader ${SUBJECTS_DIR}/${SUBJID}/mri/T1.mgz
-# done
+# Convert annotation to volume (per hemisphere)
+mkdir -p ${ROI_SAVE_DIR}
+
+for hemi in lh rh; do
+    mri_label2vol \
+      --o ${ROI_SAVE_DIR}/${hemi}.Glasser2016.VOL.nii.gz \
+      --annot ${LABEL_DIR}/${hemi}.Glasser2016.annot \
+      --temp ${SUBJECTS_DIR}/${SUBJID}/mri/T1.mgz \
+      --fillthresh 0.5 \
+      --proj frac 0 1 0.1 \
+      --subject ${SUBJID} \
+      --hemi ${hemi} \
+      --regheader ${SUBJECTS_DIR}/${SUBJID}/mri/T1.mgz
+done
 
 # # Convert NIfTI to MGZ, required for ECOGutil electrode visualization functions
 # for hemi in lh rh; do
