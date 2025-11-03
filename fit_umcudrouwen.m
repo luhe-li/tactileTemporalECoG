@@ -43,7 +43,7 @@ modelfun          = {@DN,@LINEAR};
 options.doplots   = false;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'iter';  % 'iter' 'final' 'off'
-options.algorithm = 'bads';
+options.algorithm = 'fmincon';
 options.average_elecs = true;
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder

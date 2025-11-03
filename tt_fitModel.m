@@ -34,7 +34,7 @@ if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorith
 if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
 if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
 if ~isfield(options,'n_run') || isempty(options.n_run), options.n_run = 7; end
-if xvalmode == 1, options.n_run = 3;
+if options.xvalmode == 1, options.n_run = 3;end
 
 % Some formatting
 if iscell(objFunction), objFunction = objFunction{1}; end

@@ -171,17 +171,35 @@ for n = 1:length(paramSlc)
     tactile_ci(n,:) = prctile(boot_means, [15.87 84.13]);
 end
 
-paramFig = figure('Color', [1 1 1], 'Position', [100 100 1200 600]);
+paramFig = figure('Color', [1 1 1], 'Position', [100 100 1800 600]);
 set(paramFig, 'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[1200 600])
 
 
+% Add tactile electrode groups to x-axis and scatter their parameters
+first_letters = cellfun(@(x) x(1), tactile_chan_names.name);
+unique_groups = unique(first_letters);
+n_tactile_groups = numel(unique_groups);
+
+% For positions:
+tactile_pos = v_nChans + 1; % Group-averaged tactile
+tactile_group_pos = (v_nChans + 2):(v_nChans + 1 + n_tactile_groups);
+all_labels = [v_channels.name; {'Tactile'}; cellstr(unique_groups)];
+
+% Gather color for each group from clut
+group_colors = parula(n_tactile_groups+1);
+
+% Prepare for use in plotting loop
+tactile_group_inds = cell(n_tactile_groups,1);
+for g = 1:n_tactile_groups
+    tactile_group_inds{g} = find(first_letters == unique_groups(g));
+end
+
 for n = 1:numel(paramSlc)
     p = paramSlc(n);
-    
+
     subplot(2, ceil(numel(paramSlc)/2), n); 
     hold on
     set(gca, 'LineWidth', 1, 'FontSize', 18, 'TickDir', 'out','TickLength', [0.05 0.05]);
-    
     
     % Plot visual areas with error bars
     errorbar(1:v_nChans, visual_area_means(n,:), ...
@@ -191,27 +209,34 @@ for n = 1:numel(paramSlc)
              'LineStyle', 'none', 'CapSize', 0);
     
     % Plot tactile average with error bars
-    tactile_pos = v_nChans + 1;
     errorbar(tactile_pos, tactile_means(n), ...
              tactile_means(n) - tactile_ci(n,1), ...
              tactile_ci(n,2) - tactile_means(n), ...
              '.', 'Color', 'k', 'MarkerSize', 20, 'LineWidth', 1, ...
              'LineStyle', 'none', 'CapSize', 0);
-    
-    errorbar(tactile_pos, tactile_means(n), 0,...
+
+    errorbar(tactile_pos, tactile_means(n), 0, ...
              '.', 'Color', 'k', 'MarkerSize', 20, 'LineWidth', 1, ...
              'LineStyle', 'none', 'CapSize', 0);
-    
-    all_labels = [v_channels.name; {'Tactile'};];
-    
-    xlim([0, v_nChans + 2]);
-    xticks(1:(v_nChans + 1));
+
+    % Plot tactile groups (right of tactile)
+    for g = 1:n_tactile_groups
+        these_inds = tactile_group_inds{g};
+        these_params = tactile_indiv.params(paramSlc(n), these_inds);
+        x_jitter = (rand(size(these_params))-0.5)*0.15;
+        scatter(tactile_group_pos(g) + x_jitter, these_params, 55, ...
+            'MarkerFaceColor', group_colors(g,:), ...
+            'MarkerEdgeColor', 'k', 'LineWidth', 1.2, 'MarkerFaceAlpha', 0.85);
+    end
+
+    xlim([0, v_nChans + n_tactile_groups + 2]);
+    xticks(1:(v_nChans + 1 + n_tactile_groups));
     xticklabels(all_labels);
     xtickangle(45);
-    
+
     title(paramNames{p}, 'FontSize', 20, 'Interpreter', 'latex');
     % ylabel('Parameter value', 'FontSize', 20);
-    
+
     box off
 
     if p == 1; ylim([0 0.1]); end
@@ -221,8 +246,8 @@ for n = 1:numel(paramSlc)
         if p == 5; ylim([0 0.15]); end
         if p == 6; ylim([0 0.15]); end
         if p == 7; ylim([0 4]); end
-
 end
+
 
 % Save figures
 saveas(paramFig, fullfile(fig_dir, sprintf('%s_parameters_comparison',str)), 'pdf');
