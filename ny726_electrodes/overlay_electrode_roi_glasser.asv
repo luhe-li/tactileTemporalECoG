@@ -1,0 +1,78 @@
+
+clear; close all; clc
+
+addpath('/Applications/freesurfer/8.1.0/matlab');
+
+% Load ROI
+subj_id = 'som726_warped';
+bids_dir = '/Volumes/server/Projects/BAIR/Data/BIDS/tactile';
+ROI_dir = fullfile(bids_dir, 'derivatives', 'roiVols', subj_id);
+
+glasser_file = fullfile(ROI_dir, 'rh.Glasser2016.VOL.nii.gz');
+glasser = MRIread(glasser_file);
+glasser_vol = glasser.vol;
+
+% Check the full atlas brain
+% volshow(glasser_vol);
+
+% Load electrodes in T1
+all_electrodes_file = fullfile(bids_dir, 'derivatives', 'NY726_2_elec', 'NY726_2_726_2_elec_bin_T1_2025-04-29.nii.gz');
+% all_electrodes_file = fullfile(bids_dir, 'derivatives','freesurfer','som726_warped', 'mri','NY726_2_elec.mgz');
+elec_file = MRIread(all_electrodes_file);
+elec_vol = elec_file.vol;
+elec_mask = elec_vol ~= 0;
+
+% Unique contacts index
+contacts = unique(elec_vol(:));
+contacts(contacts==0) = []; 
+
+%% Check file coordinates
+
+% mri_info /Volumes/server/Projects/BAIR/Data/BIDS/tactile/derivatives/roiVols/som726_warped/rh.Glasser2016.VOL.nii.gz | grep Orientation
+% mri_info /Volumes/server/Projects/BAIR/Data/BIDS/tactile/derivatives/NY726_2_elec/NY726_2_726_2_elec_bin_T1_2025-04-29.nii.gz | grep Orientation
+
+% Found that glasser is in LIA coordiante and electrodes are in RAS
+% coordinates, so they are flipped
+
+% Convert glasser LIA to the more common RAS
+mri_convert /Volumes/server/Projects/BAIR/Data/BIDS/tactile/derivatives/roiVols/som726_warped/rh.Glasser2016.VOL.nii.gz /Volumes/server/Projects/BAIR/Data/BIDS/tactile/derivatives/roiVols/som726_warped/rh.Glasser2016_RAS.VOL.nii.gz --out_orientation RAS
+
+
+%% Overlay electrodes with Glasser ROI
+% ROI = S1 (BA3a, BA3b, BA1, BA2): 53, 9, 51, 52 (Glasser indices)
+glasser_labels = unique(glasser_vol(:));
+roi_inds = [53 9 51 52];
+
+% Initiate
+combined_vol = zeros(size(glasser_vol));
+
+% Label the full atlas
+combined_vol(glasser_vol~=0) = 1;
+
+% Label the ROIs
+for rr = 1:numel(roi_inds)
+    combined_vol(glasser_vol == roi_inds(rr)) = 1+rr;
+end
+
+% Label the electrodes
+combined_vol(elec_mask) = numel(roi_inds) + 2;
+
+lut = [
+    0     0     0;        % background
+    1     1     1;        % whole atlas (white)
+    0     0     205/255;  % BA3a 
+    0     191/255 1;      % BA3b 
+    1     0     1;        % BA1 
+    139/255 0 139/255;    % BA2 
+    0     1     0         % electrodes
+];
+roi_alpha = repmat(0.5, [numel(roi_inds), 1]);
+alpha = [0; 0.01; roi_alpha; 1]; 
+
+v = volshow(combined_vol, ...
+    'Colormap', lut, ...
+    'Alphamap', alpha);
+
+viewer = v.Parent;
+viewer.BackgroundColor = [0 0 0];
+viewer.BackgroundGradient = 'off';
