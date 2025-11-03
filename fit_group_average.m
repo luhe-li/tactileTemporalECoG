@@ -86,3 +86,13 @@ options.average_elecs = false;
 tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], str);
 
 
+%% 5. Bootstrap electrodes, take group average, fit model, to get 68% and 95% confidence intervals
+
+n_boot = 1000;
+modelfun = @DN;
+options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.average_elecs = true;
+options.n_boot = n_boot;
+options.n_run = 1;
+
+tt_doBtstModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], str);

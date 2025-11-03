@@ -33,7 +33,7 @@ if ~exist('options', 'var') || isempty(options), options = struct(); end
 if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorithm = 'bads'; end
 if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
 if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
-if ~isfield(options,'n_run') || isempty(options.n_run), options.n_run = 7; end
+if ~isfield(options,'n_run') || isempty(options.n_run), options.n_run = 14; end
 if options.xvalmode == 1, options.n_run = 3;end
 
 % Some formatting
@@ -46,11 +46,13 @@ if ~isfield(options,'startprm') || isempty(options.startprm)
 end
 lb = options.startprm.lb;
 ub = options.startprm.ub;
+pub = options.startprm.pub;
+plb = options.startprm.plb;
 x0 = options.startprm.x0;
 
 % Get n_run grid initializations for BADS
 n_run = options.n_run;
-inits = getInit(lb, ub, n_run*2, n_run);
+inits = getInit(plb, pub, n_run*2, n_run);
 
 pnames = strsplit(options.startprm.params,',');
 
