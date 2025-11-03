@@ -34,6 +34,7 @@ if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorith
 if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
 if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
 if ~isfield(options,'n_run') || isempty(options.n_run), options.n_run = 7; end
+if xvalmode == 1, options.n_run = 3;
 
 % Some formatting
 if iscell(objFunction), objFunction = objFunction{1}; end
@@ -45,8 +46,9 @@ if ~isfield(options,'startprm') || isempty(options.startprm)
 end
 lb = options.startprm.lb;
 ub = options.startprm.ub;
+x0 = options.startprm.x0;
 
-% Get n_run grid initializations for the optimizer
+% Get n_run grid initializations for BADS
 n_run = options.n_run;
 inits = getInit(lb, ub, n_run*2, n_run);
 
@@ -135,21 +137,16 @@ for ii = 1:nDatasets % loop over channels or channel averages
                     searchopts.MaxFunctionEvaluations = 10000;
                     searchopts.Display = options.display;
                     problem.objective = @(x) objFunction(x, data2fit, stim2fit, srate);
+                    problem.x0 = x0;
                     problem.solver = 'fmincon';
                     problem.lb = lb;
                     problem.ub = ub;
                     problem.options = searchopts;
-                    parfor kk = 1:n_run
-                        temp_problem = problem;
-                        temp_problem.x0 = inits(kk,:);
-                        [all_prm(kk), all_rmse(kk)] = fmincon(temp_problem);
-                    end
-                    [~, best_idx] = min(all_rmse);
-                    prm = all_prm(best_idx,:);
+                    prm = fmincon(problem);
                 otherwise
                     error('[%s] Fitting algorithm not recognized \n', mfilename);
             end
-        
+
         
         % Save params from full model fit
         if jj == 1, params(:,ii) = prm; end

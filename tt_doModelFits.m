@@ -30,7 +30,6 @@ for ii = 1:size(modelfun,2)
     objFunction = modelfun{ii};
     [params, pred] = tt_fitModel(objFunction, stim, data, srate, options);
     
-    
     % SAVE RESULTS
     if ~isempty(saveDir)
         
