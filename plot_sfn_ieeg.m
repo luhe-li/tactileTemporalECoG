@@ -5,6 +5,7 @@
 
 % Model fits of average-electrode are under bidsRootPath/derivatives/modelFit/results
 
+close all
 %% 
 server_available = true;
 if server_available 
@@ -19,12 +20,16 @@ else
     fig_dir = fullfile(pwd, 'figures');
 end
 
-modelColors = [218, 62, 82; 45, 125, 210]./255; % red and blue
-
 %% Load all data
 
+epoch_t = [-0.4, 1.6];
 models_to_plot = {'DN', 'LINEAR'};
-str = 'umcudrouwen'; %umcudrouwen/ny726/group_average
+str = 'group_average'; %umcudrouwen/ny726/group_average
+
+% colors = parula(4);
+% modelColors = colors(2:3,:);
+
+modelColors = [218, 62, 82; 45, 125, 210]./255; % red and blue
 
 %% Evaluate cross-valiedated R2
 
@@ -255,21 +260,23 @@ saveas(paramFig, fullfile(fig_dir, sprintf('%s_parameters_comparison',str)), 'pd
 
 %% Plot summed responses
 
-summaryFig      = figure('Color', [1 1 1], 'Position', [30 300 550 260]);
+summaryFig      = figure('Color', [1 1 1], 'Position', [30 300 800 260]);
 set(summaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[550 260])
 figure(summaryFig)
+T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 
 % Load individual electrode data to get confidence interval
 tactile_indiv = load(fullfile(data_dir,sprintf('DN_xvalmode0_individualelecs_%s.mat', str)), ...
                      'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params');
 
-cResponses68 = prctile(tactile_indiv.data, [15.87 84.13], 2);
-cResponses95 = prctile(tactile_indiv.data, [97.5, 2.5], 2);
+cResponses68 = prctile(squeeze(sum(tactile_indiv.data, 1)), [15.87 84.13], 2);
+cResponses95 = prctile(squeeze(sum(tactile_indiv.data, 1)), [2.5, 97.5], 2);
 
-xvalues = [];
-for dd = 1:length(models_to_plot)
+num_one_pulse = numel(onePulseIndx);
+num_two_pulse = numel(twoPulseIndx);
 
-    model = models_to_plot{dd};
+xvalues = [0.05, 0.1, 0.2, 0.4, 0.8, 1.2];
+
     % D = load(fullfile(data_dir, sprintf('%s_xvalmode0_electrodeaverages_%s.mat', model, str)));
     % data = D.data;
     % pred = D.pred;
@@ -279,12 +286,111 @@ for dd = 1:length(models_to_plot)
     % One pulse conditions
     t1 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
     t1.Layout.Tile = 1;
-    ax1 = nexttile(t1,[1 1]);
-    hold on,
-    plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
-    plot(0 .* [1; 1], squeeze(sum(cResponses95(1,:,:),2))', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
-    plot(0 .* [1; 1], squeeze(sum(cResponses68(1,:,:),2))', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
-    plot(0,  sum_data(1, :), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+    % ax1 = nexttile(t1,[1 1]);
+    % hold on,
+    % plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+    % plot(0 .* [1; 1], cResponses95(1,:), 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+    % plot(0 .* [1; 1], cResponses68(1,:), 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+    % plot(0,  sum_data(1), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
 
+    ax2 = nexttile(t1,[1 2]);
+    hold on
+    plot([0.04 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+    plot(xvalues .* [1; 1], cResponses95(1:num_one_pulse,:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(xvalues .* [1; 1], cResponses68(1:num_one_pulse,:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(xvalues,  sum_data(1:num_one_pulse), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+    % Paired pulse conditions
+    t2 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
+    t2.Layout.Tile = 2;
+    ax3 = nexttile(t2,[1 1]);
+    hold on
+    plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+    plot(0 .* [1; 1], cResponses95(twoPulseIndx(1),:), 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(0 .* [1; 1], cResponses68(twoPulseIndx(1),:), 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(0,  sum_data(twoPulseIndx(1)), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
     
-end
+    ax4 = nexttile(t2,[1 2]);
+    hold on
+    plot([0.04 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+    plot(xvalues .* [1; 1], cResponses95(twoPulseIndx(2:end),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(xvalues .* [1; 1], cResponses68(twoPulseIndx(2:end),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(xvalues,  sum_data(twoPulseIndx(2:end)), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+    % Linear xaxis
+    t3 = tiledlayout(T,2,1,'TileIndexing','columnmajor');
+    t3.Layout.Tile = 3;
+    ax5 = nexttile(t3,[1 1]);
+    hold on
+    plot([-0.05 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+    plot(xvalues .* [1; 1], cResponses95(onePulseIndx,:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(xvalues .* [1; 1], cResponses68(onePulseIndx,:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot(xvalues,  sum_data(onePulseIndx), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+    ax6 = nexttile(t3,[1 1]);
+    hold on
+    plot([-0.05 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+    plot([0 xvalues].* [1; 1], cResponses95(twoPulseIndx,:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot([0 xvalues] .* [1; 1], cResponses68(twoPulseIndx,:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+    plot([0 xvalues],  sum_data(twoPulseIndx), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+
+    for dd = 1:length(models_to_plot)
+
+        plot(ax2, xvalues, sum_pred{dd}(1:num_one_pulse), 'Color', modelColors(dd,:), 'LineWidth', 1.5)
+        plot(ax3, 0, sum_pred{dd}(twoPulseIndx(1)), 'Color', modelColors(dd,:), 'LineWidth', 1.5)
+        plot(ax4, xvalues, sum_pred{dd}(twoPulseIndx(2:end)), 'Color', modelColors(dd,:), 'LineWidth', 1.5)
+        plot(ax5, xvalues, sum_pred{dd}(onePulseIndx), 'Color', modelColors(dd,:), 'LineWidth', 1.5 )
+        plot(ax6, [0 xvalues], sum_pred{dd}(twoPulseIndx), 'Color', modelColors(dd,:), 'LineWidth', 1.5 )
+
+    end
+
+    ybounds = get(ax2, 'YLim');
+    
+    ax2.Box = 'off';
+    t1.Title.String = 'Single-pulse conditions';
+    t1.XLabel.String = 'Stimulus duration (s)';
+    t1.YLabel.String = {'Summed broadband time-series';'(X-fold)'};
+    
+
+    set(ax2, 'TickDir', 'out', 'XTick', [0.1 1], 'XTickLabel', [0.1 1], ...
+        'Xscale', 'log', 'FontSize', 10, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
+        'YTick', ybounds(1):200:ybounds(2), 'YLim', ybounds, 'XLim', [0.035 1.3]);
+    ax2.Box = 'off';
+    % ax2.YAxis.Visible = 'off';
+  
+    set(ax3, 'TickDir', 'out', 'XTick', 0, 'XTickLabel', 0, ...
+        'FontSize', 10, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
+        'YTick', ybounds(1):200:ybounds(2), 'YLim', ybounds, 'XLim', [-0.005 0.01]);
+    ax3.Box = 'off';
+    t2.Title.String = 'Paired-pulse conditions';
+    t2.XLabel.String = 'Interstimulus interval (s)';
+    t2.YLabel.String = {'Summed broadband time-series';'(X-fold)'};
+    
+    set(ax4, 'TickDir', 'out', 'XTick', [0.1 1], 'XTickLabel', [0.1 1], ...
+        'Xscale', 'log', 'FontSize', 10, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
+        'YTick', ybounds(1):200:ybounds(2), 'YLim', ybounds, 'XLim', [0.04 1.3]);
+    ax4.Box = 'off';
+    ax4.YAxis.Visible = 'off';
+     
+
+    set(ax5, 'TickDir', 'out', 'XTick', 0:0.4:1.2, 'XTickLabel', 0:0.4:1.2, ...
+        'FontSize', 8, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
+        'YTick', ybounds(1):200:ybounds(2), 'YLim', ybounds, 'XLim', [-0.1 1.3]);
+    ax5.Box = 'off';
+    ax5.Title.String = 'Single-pulse conditions';
+    ax5.XLabel.String = 'Duration (s)';
+    ax5.DataAspectRatio = [1 1200 1];
+    t3.YLabel.String = {'Summed broadband time-series';'(X-fold)'};
+
+    set(ax6, 'TickDir', 'out', 'XTick', 0:0.4:1.2, 'XTickLabel', 0:0.4:1.2, ...
+        'FontSize', 8, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
+        'YTick', ybounds(1):200:ybounds(2), 'YLim', ybounds, 'XLim', [-0.1 1.3]);
+    ax6.Box = 'off';
+    ax6.Title.String = 'Paired-pulse conditions';
+    ax6.DataAspectRatio = [1 1200 1];
+    ax6.XLabel.String = 'ISI (s)';
+
+    saveas(summaryFig, fullfile(fig_dir, sprintf('%s_summed_responses', str)), 'pdf');
+
+ 
