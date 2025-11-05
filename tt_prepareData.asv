@@ -80,6 +80,24 @@ if iscell(events.run_name), run_name = cell2mat(events.run_name); end
 fprintf('[%s] Found %d epochs across %d runs and %d sessions \n', ...
     mfilename, size(epochs,2), length(unique(run_name)), length(unique(events.session_name)));
 
+% Check if the next trial starts before the end of current epoch
+% If so, zero-pad the overlap for this trial and all the channels
+for tt = 1:(size(epochs,2)-1)
+    overlap = (events.onset(tt) + specs.epoch_t(2)) - events.onset(tt+1);
+    if overlap > 0
+        % Convert overlap duration to samples
+        overlap_samp = round(overlap * srate);
+        end_idx = size(epochs,1);
+        zero_idx = (end_idx - overlap_samp + 1):end_idx;
+        % before
+        org_epochs = epochs;
+        epochs(zero_idx, tt, :) = 0;
+
+        figure; hold on; plot(org_epoc)
+        
+    end
+end
+
 % Baseline correct the epochs
 switch description
     case 'reref'
@@ -89,24 +107,6 @@ switch description
 end
 fprintf('[%s] Baseline correcting epochs using %s \n', mfilename, baseType);
 [epochs] = ecog_normalizeEpochs(epochs, t, specs.base_t, baseType);
-
-
-% Check if the next trial starts before the end of current epoch
-% If so, zero-pad the overlap for this trial and all the channels
-fprintf('[%s] Zero-pad the overlap if the next trial starts before the current epoch end', mfilename);
-for tt = 1:(size(epochs,2)-1)
-    overlap = (events.onset(tt) + specs.epoch_t(2)) - events.onset(tt+1);
-    if overlap > 0
-        % Convert overlap duration to samples
-        overlap_samp = round(overlap * srate);
-        end_idx = size(epochs,1);
-        zero_idx = (end_idx - overlap_samp + 1):end_idx;
-        % org_epochs = epochs;
-        epochs(zero_idx, tt, :) = 0;
-        % figure; hold on; plot(org_epochs(:,tt,1)); plot(epochs(:,tt,1));
-    end
-end
-
 
 % Select trials
 fprintf('[%s] Selecting stimulus conditions... \n', mfilename);
