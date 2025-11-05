@@ -1,6 +1,6 @@
 
 clear;
-% tbUse tactileTemporalECoG
+ tbUse tactileTemporalECoG
 
 compute     = false;
 bidsDir     = tt_bidsRootPath;

@@ -1,4 +1,4 @@
-function [params, pred, pnames] = tt_fitModel(objFunction, stim, data, srate, options)
+function [params, pred, pnames, params_rand_init] = tt_fitModel(objFunction, stim, data, srate, options)
 
 % [params, pred, pnames] = tde_fitModel(objFunction, data, stim, srate, options) 
 %
@@ -33,6 +33,9 @@ if ~exist('options', 'var') || isempty(options), options = struct(); end
 if ~isfield(options,'algorithm') || isempty(options.algorithm), options.algorithm = 'bads'; end
 if ~isfield(options,'xvalmode') || isempty(options.xvalmode), options.xvalmode = 0; end
 if ~isfield(options,'display') || isempty(options.display), options.display = 'iter'; end
+if ~isfield(options,'nfit') || isempty(options.nfit), options.nfit = 7; end
+if options.xvalmode == 1; options.nfit = 3; end % Fit less when doing crossvalidation
+params_rand_init = [];
 
 % Some formatting
 if iscell(objFunction), objFunction = objFunction{1}; end
@@ -53,6 +56,10 @@ switch options.algorithm
         if isfield(options.startprm, 'pub') 
             plb = options.startprm.plb;
             pub = options.startprm.pub;
+            
+            % use multiple initiations for bads
+            inits = getInit(plb, pub, options.nfit*2, options.nfit);
+
         else
             fprintf('[%s] No plausible bounds specified for bads, switching to lsqnonlin \n', mfilename);
             options.algorithm = 'lsqnonlin';
@@ -116,7 +123,15 @@ for ii = 1:nDatasets % loop over channels or channel averages
                 searchopts = optimset('Display',options.display);
                 searchopts.MaxIterations = 10000;
                 searchopts.MaxFunctionEvaluations = 10000;
-                prm = bads(@(x) objFunction(x, data2fit, stim2fit, srate),  x0, lb, ub, plb, pub, [], searchopts);
+                temp_prm = nan(options.nfit, nParams);
+                rmse = nan(1, options.nfit);
+                parfor ff = 1:options.nfit
+                    tempFunction = objFunction;
+                    [temp_prm(ff,:), rmse(ff)] = bads(@(x) tempFunction(x, data2fit, stim2fit, srate),  inits(ff,:), lb, ub, plb, pub, [], searchopts);
+                end
+                [~, best_idx] = min(rmse);
+                prm = temp_prm(best_idx,:);
+                params_rand_init = temp_prm;
             case 'lsqnonlin'
                 searchopts.Algorithm = 'levenberg-marquardt';
                 searchopts = optimoptions(@lsqnonlin,'Algorithm','levenberg-marquardt');

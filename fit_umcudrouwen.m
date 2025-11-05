@@ -37,13 +37,14 @@ end
 
 % Fitting DN/Linear model by reusing Iris' codes, removing probabilistic
 % resample step
-modelfun          = {@DN,@LINEAR};
+% modelfun          = {@DN,@LINEAR};
+modelfun = @DN_fixw;
 
 % Define options
 options.doplots   = false;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'iter';  % 'iter' 'final' 'off'
-options.algorithm = 'fmincon';
+options.algorithm = 'bads';
 options.average_elecs = true;
 
 % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
@@ -55,7 +56,7 @@ tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [
 
 %% 3. Model fitting to each electrodes, DN model only to get parameter estimates confidence interval
 
-modelfun          = @DN;
+modelfun          = @DN_fixw;
 options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.average_elecs = false;
 tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);

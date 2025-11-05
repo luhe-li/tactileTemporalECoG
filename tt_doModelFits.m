@@ -28,7 +28,7 @@ for ii = 1:size(modelfun,2)
     
     % FIT MODEL
     objFunction = modelfun{ii};
-    [params, pred] = tt_fitModel(objFunction, stim, data, srate, options);
+    [params, pred, ~, params_rand_init] = tt_fitModel(objFunction, stim, data, srate, options);
     
     
     % SAVE RESULTS
@@ -48,7 +48,7 @@ for ii = 1:size(modelfun,2)
             saveName = sprintf('%s_%s', saveName, datestr(now,30));
             fprintf('[%s] Saving results to %s \n', mfilename, saveName);
         end
-        save(saveName, 'stim', 'data', 'pred', 'params', 'channels','srate','t','stim_info','options', 'objFunction');  
+        save(saveName, 'stim', 'data', 'pred', 'params', 'channels','srate','t','stim_info','options', 'objFunction','params_rand_init');  
     end
 end
 

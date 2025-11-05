@@ -8,7 +8,7 @@ if server_available
     bids_dir     = tt_bidsRootPath;
     data_dir = fullfile(bids_dir, 'derivatives', 'modelFit', 'results');
 
-    fig_dir     = fullfile(bids_dir, 'derivatives', 'modelFit', 'figure', 'sfn');
+    fig_dir     = fullfile(bids_dir, 'derivatives', 'modelFit', 'figure', 'check_tradeoff');
     if ~exist(fullfile(fig_dir), 'dir'), mkdir(fullfile(fig_dir)); end
 else
     git_dir = fileparts(pwd);
@@ -65,12 +65,12 @@ for n = 1:length(paramSlc)
     tactile_ci(n,:) = prctile(boot_means, [15.87 84.13]);
 end
 
+%% plot
 paramFig = figure('Color', [1 1 1], 'Position', [100 100 1800 600]);
 set(paramFig, 'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[1200 600])
 
-
 % Add tactile electrode groups to x-axis and scatter their parameters
-first_letters = cellfun(@(x) x(1), tactile_chan_names.name);
+first_letters = cellfun(@(x) x(1), tactile_indiv.channels.name);
 unique_groups = unique(first_letters);
 n_tactile_groups = numel(unique_groups);
 
@@ -142,6 +142,20 @@ for n = 1:numel(paramSlc)
         if p == 7; ylim([0 4]); end
 end
 
-
 % Save figures
-saveas(paramFig, fullfile(fig_dir, sprintf('%s_parameters_comparison',str)), 'pdf');
+saveas(paramFig, fullfile(fig_dir, sprintf('%s_parameters_comparison',str)), 'png');
+
+%% scatter estimates of w vs. tau2
+
+figure;
+hold on
+
+w_idx = 2;
+tau2_idx = 3;
+set(gca, 'LineWidth', 1, 'FontSize', 18, 'TickDir', 'out','TickLength', [0.05 0.05]);
+scatter(tactile_indiv.params(w_idx,:), tactile_indiv.params(tau2_idx,:), 80, 'k', 'filled');
+xlabel(paramNames{w_idx}, 'FontSize', 20, 'Interpreter', 'latex');
+ylabel(paramNames{tau2_idx}, 'FontSize', 20, 'Interpreter', 'latex');
+box off
+
+saveas(gcf, fullfile(fig_dir, sprintf('%s_scatter_w_vs_tau2',str)), 'png');

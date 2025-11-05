@@ -59,8 +59,8 @@ channel = vertcat(channel1, channel2);
 % Generate stimulus timecourses, using the stimulus info file of nyu patients
 [stim_ts, stim_info] = tt_generateStimulusTimecourses(nyu_stim_names, t);
 
-% modelfun = {@DN, @LINEAR};
-modelfun = @LINEAR;
+modelfun = {@DN, @LINEAR};
+% modelfun = @LINEAR;
 
 % Define parameters
 options.doplots   = true;
@@ -82,7 +82,6 @@ modelfun = @DN;
 options.xvalmode = 0;
 options.average_elecs = false;
 tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], 'group_average');
-
 
 % %% 4. Model evaluation
 % 
