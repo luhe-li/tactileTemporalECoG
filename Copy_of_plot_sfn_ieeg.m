@@ -24,7 +24,7 @@ end
 
 epoch_t = [-0.4, 1.6];
 % models_to_plot = {'DN', 'LINEAR'};
-models_to_plot = {'DN_fixw','LINEAR'};wo myowo men
+models_to_plot = {'DN_fixw','LINEAR'};
 str = 'umcudrouwen'; %umcudrouwen/ny726/group_average
 
 % colors = parula(4);

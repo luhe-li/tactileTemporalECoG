@@ -37,8 +37,8 @@ end
 
 % Fitting DN/Linear model by reusing Iris' codes, removing probabilistic
 % resample step
-% modelfun          = {@DN,@LINEAR};
-modelfun = @DN_fixw;
+% modelfun          = {@DN,@LINEAR， @DN_fixw};
+modelfun = @LINEAR;
 
 % Define options
 options.doplots   = false;

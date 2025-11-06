@@ -101,9 +101,7 @@ for tt = 1:(size(epochs,2)-1)
         overlap_samp = round(overlap * srate);
         end_idx = size(epochs,1);
         zero_idx = (end_idx - overlap_samp + 1):end_idx;
-        % org_epochs = epochs;
         epochs(zero_idx, tt, :) = 0;
-        % figure; hold on; plot(org_epochs(:,tt,1)); plot(epochs(:,tt,1));
     end
 end
 
