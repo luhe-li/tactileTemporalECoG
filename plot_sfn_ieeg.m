@@ -315,3 +315,74 @@ end
 % Predict fMRI summed data by scaling model predictions of ecog data
 scaler = mean(fmri_summed_data) / mean(sum_data);
 fmri_pred = scaler * sum_pred{1};
+
+%% make plot of fmri 
+
+fmriSummaryFig      = figure('Color', [1 1 1], 'Position', [30 300 800 260]);
+set(fmriSummaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[550 260])
+figure(fmriSummaryFig)
+T = tiledlayout(1, 3,'TileIndexing','rowmajor');
+
+ybounds = [-1 5];
+
+%-- one pulse
+t1 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
+t1.Layout.Tile = 1;
+ax1 = nexttile(t1,[1 1]);
+hold on,
+plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot(0 .* [1; 1],fmri_ci_95(1,:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(0 .* [1; 1], fmri_ci_68(1,:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(0,  fmri_summed_data(1), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+ax2 = nexttile(t1,[1 2]);
+hold on
+plot([0.04 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot(xvalues(2:end) .* [1; 1], fmri_ci_95(2:numel(xvalues),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues(2:end) .* [1; 1], fmri_ci_68(2:numel(xvalues),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues(2:end),  fmri_summed_data(2:numel(xvalues), :), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+%-- paired pulse
+t2 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
+t2.Layout.Tile = 2;
+ax3 = nexttile(t2,[1 1]);
+hold on
+plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot(0 .* [1; 1], fmri_ci_95((1)+numel(onePulseIndx),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(0 .* [1; 1], fmri_ci_68((1)+numel(onePulseIndx),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(0,  fmri_summed_data((1)+numel(onePulseIndx), :), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+ax4 = nexttile(t2,[1 2]);
+hold on
+plot([0.04 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot(xvalues(2:end) .* [1; 1], fmri_ci_95((2:numel(xvalues))+numel(onePulseIndx),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues(2:end) .* [1; 1], fmri_ci_68((2:numel(xvalues))+numel(onePulseIndx),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues(2:end),  fmri_summed_data((2:numel(xvalues))+numel(onePulseIndx), :), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+
+%-- linear xaxis
+t3 = tiledlayout(T,2,1,'TileIndexing','columnmajor');
+t3.Layout.Tile = 3;
+ax5 = nexttile(t3, [1 1]);
+hold on
+plot([-0.05 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot(xvalues .* [1; 1], fmri_ci_95(1:numel(xvalues),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues .* [1; 1], fmri_ci_68(1:numel(xvalues),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues,  fmri_summed_data(1:numel(xvalues), :), '.k', 'MarkerSize', 10,  'HandleVisibility', 'off')
+
+ax6 = nexttile(t3,[1 1]);
+hold on
+plot([-0.05 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot(xvalues .* [1; 1], fmri_ci_95((1:numel(xvalues))+numel(onePulseIndx),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues .* [1; 1], fmri_ci_68((1:numel(xvalues))+numel(onePulseIndx),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
+plot(xvalues,  fmri_summed_data((1:numel(xvalues))+numel(onePulseIndx), :), '.k', 'MarkerSize', 10,  'HandleVisibility', 'off')
+
+for dd = 1:length(models_to_plot)
+
+    plot(ax2, xvalues, fmri_pred(1:numel(onePulseIndx)-1), 'Color', modelColors(dd,:), 'LineWidth', 1.5)
+    plot(ax3, 0, fmri_pred(twoPulseIndx(1)), 'Color', modelColors(dd,:), 'LineWidth', 1.5)
+    plot(ax4, xvalues, fmri_pred(twoPulseIndx(2:end)), 'Color', modelColors(dd,:), 'LineWidth', 1.5)
+    plot(ax5, xvalues, fmri_pred(onePulseIndx), 'Color', modelColors(dd,:), 'LineWidth', 1.5 )
+    plot(ax6, [0 xvalues], fmri_pred(twoPulseIndx), 'Color', modelColors(dd,:), 'LineWidth', 1.5 )
+
+end
