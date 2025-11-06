@@ -71,8 +71,8 @@ end
 
 %% Plot timecourses for each condition
 
-tcourseFig = figure('Color', [1 1 1], 'Position', [0, 300, 1400, 400]);
-set(tcourseFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[1000 400])
+tcourseFig = figure('Color', [1 1 1], 'Position', [0, 0, 1000, 300]);
+set(tcourseFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[1000 300])
 T1 = tiledlayout(2, 1,'TileIndexing','rowmajor');
 
 bounds = @(x) [floor(min(x(:))*10) ceil(max(x(:))*10)]/10;
@@ -94,14 +94,18 @@ for i = 1:nSingle
     plot(t, stim_ts(:, onePulseIndx(i)) * ybounds(end), 'Color', [.5 .5 .5], 'HandleVisibility', 'off')
     plot(t([1 end]), [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
     plot(t, data(:,onePulseIndx(i)), 'k-', 'LineWidth', 1, 'DisplayName', 'Data')
-    for j = 1:numel(models_to_plot)
-        plot(t, preds{j}(:,onePulseIndx(i)), 'Color', modelColors(j,:), 'LineWidth', 1, 'DisplayName', modelLabels{j})
+    for j = 1%:numel(models_to_plot)
+        plot(t, preds{j}(:,onePulseIndx(i)), 'Color', modelColors(j,:), 'LineWidth', 1.5, 'DisplayName', modelLabels{j})
     end
     set(gca,'TickDir', 'out', 'FontSize', 14, 'XColor', 'k', 'YColor', 'k', ...
         'LineWidth', 1, 'TickLength', [0.05 0.05])
     title(sprintf('Dur %.2fs', xDur(i)), 'FontSize', 10)
     ylim(ybounds)
+    if i ~= 1
+        yticks([])
+    end
     box off
+    
 end
 
 tpanel2 = tiledlayout(T1,1,n_two,'TileIndexing','columnmajor');
@@ -112,20 +116,23 @@ for i = 1:n_two
     plot(t, stim_ts(:, twoPulseIndx(i)) * ybounds(end), 'Color', [.5 .5 .5], 'HandleVisibility', 'off')
     plot(t([1 end]), [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
     plot(t, data(:,twoPulseIndx(i)), 'k-', 'LineWidth', 1, 'DisplayName', 'Data')
-    for j = 1:numel(models_to_plot)
-        plot(t, preds{j}(:,twoPulseIndx(i)), 'Color', modelColors(j,:), 'LineWidth', 1, 'DisplayName', modelLabels{j})
+    for j = 1%:numel(models_to_plot)
+        plot(t, preds{j}(:,twoPulseIndx(i)), 'Color', modelColors(j,:), 'LineWidth', 1.5, 'DisplayName', modelLabels{j})
     end
     set(gca,'TickDir', 'out', 'FontSize', 14, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, 'TickLength', [0.03 0.03])
     title(sprintf('ISI %.2fs', xISI(i)), 'FontSize', 10)
+    if i ~= 1
+        yticks([])
+    end
     ylim(ybounds)
     box off
 end
-saveas(tcourseFig, fullfile(fig_dir, sprintf('%s_timecourse_%s', str)), 'pdf');
+saveas(tcourseFig, fullfile(fig_dir, sprintf('%s_%s_timecourse_%s', str, models_to_plot{1})), 'pdf');
 
 %% Plot summed responses
 
-summaryFig = figure('Color', [1 1 1], 'Position', [30 300 800 260]);
-set(summaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[550 260])
+summaryFig = figure('Color', [1 1 1], 'Position', [0 0 800 250]);
+set(summaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[800 250])
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 
 tactile_indiv = load(fullfile(data_dir,sprintf('DN_fixw_xvalmode0_individualelecs_%s.mat', str)), ...
@@ -182,11 +189,11 @@ plot(xISI, sum_data(twoPulseIndx), '.k', 'MarkerSize', 25,  'HandleVisibility', 
 
 % Overplot model predictions
 for j = 1:numel(models_to_plot)
-    plot(ax2, xDur, sum_pred{j}(onePulseIndx), 'Color', modelColors(j,:), 'LineWidth', 1.5)
-    plot(ax3, xISI(1), sum_pred{j}(twoPulseIndx(1)), 'Color', modelColors(j,:), 'LineWidth', 1.5)
-    plot(ax4, xISI(2:end), sum_pred{j}(twoPulseIndx(2:end)), 'Color', modelColors(j,:), 'LineWidth', 1.5)
-    plot(ax5, xDur, sum_pred{j}(onePulseIndx), 'Color', modelColors(j,:), 'LineWidth', 1.5 )
-    plot(ax6, xISI, sum_pred{j}(twoPulseIndx), 'Color', modelColors(j,:), 'LineWidth', 1.5 )
+    plot(ax2, xDur, sum_pred{j}(onePulseIndx), 'Color', modelColors(j,:), 'LineWidth', 2)
+    plot(ax3, xISI(1), sum_pred{j}(twoPulseIndx(1)), 'Color', modelColors(j,:), 'LineWidth',2)
+    plot(ax4, xISI(2:end), sum_pred{j}(twoPulseIndx(2:end)), 'Color', modelColors(j,:), 'LineWidth',2)
+    plot(ax5, xDur, sum_pred{j}(onePulseIndx), 'Color', modelColors(j,:), 'LineWidth', 2)
+    plot(ax6, xISI, sum_pred{j}(twoPulseIndx), 'Color', modelColors(j,:), 'LineWidth', 2)
 end
 
 ybounds = get(ax2, 'YLim');
@@ -195,7 +202,7 @@ t1.Title.String = 'Single-pulse conditions';
 t1.XLabel.String = 'Stimulus duration (s)';
 t1.YLabel.String = {'Summed broadband time-series';'(X-fold)'};
 
-tickspace = 1000;
+tickspace = 500;
 if strcmp(str, 'ny726'), tickspace = 200; end
 
 set(ax2, 'TickDir', 'out', 'XTick', [0.1 1], 'XTickLabel', [0.1 1], ...
@@ -220,11 +227,9 @@ t3.YLabel.String = {'Summed broadband time-series';'(X-fold)'};
 
 saveas(summaryFig, fullfile(fig_dir, sprintf('%s_summed_responses', str)), 'pdf');
 
-disp(sum_pred{1})
-
 %% Load fMRI data
 
-clearvars -except xDur xISI stim_info data_dir modelColors fig_dir
+clearvars -except xDur xISI stim_info data_dir modelColors fig_dir models_to_plot
 
 % ----- load fMRI data -----
 fmri_data_dir = '/Volumes/server/Projects/TemporalTactileCounting/Data/modelOutput';
@@ -258,36 +263,40 @@ subjects = {'umcudrouwen','ny726'};
 num_subs = numel(subjects);
 
 % Load and extract DN model predictions for each subject
-for ss = 1:num_subs
+for ss = 1%:num_subs
     sub_str = subjects{ss};
 
-    % Load DN model fits for each subject
-    dn_path = fullfile(data_dir, sprintf('DN_fixw_xvalmode0_electrodeaverages_%s.mat', sub_str));
-    if exist(dn_path,'file')
-        Dsub = load(dn_path);
+    for mm = 1:numel(models_to_plot)
+        dn_path = fullfile(data_dir, sprintf('%s_xvalmode0_electrodeaverages_%s.mat', models_to_plot{mm}, sub_str));
+        
+        if exist(dn_path,'file')
+            Dsub = load(dn_path);
+            sum_preds{mm}(ss,:) = squeeze(sum(Dsub.pred,1)); % summed prediction per condition
 
-        dn_preds(ss,:) = squeeze(sum(Dsub.pred,1)); % summed prediction per condition
-        ieeg_data(ss,:) = sum(Dsub.data,1);
-
-    else
-        error('File does not exist: %s', dn_path)
+            % Data are the same for all models
+            ieeg_data(ss,:) = sum(Dsub.data,1);
+        else
+            error('File does not exist: %s', dn_path)
+        end
     end
 end
 
 % Average across subjects
-mean_pred_dn = mean(dn_preds,1);
+mean_pred_dn = mean(sum_preds{1},1);
+mean_pred_lin = mean(sum_preds{2},1);
 
 % Scale up by the mean of the fMRI data
 scaler = mean(fmri_summed_data(:))/mean(ieeg_data(:));
 fmri_pred_dn =  mean_pred_dn * scaler;
+fmri_pred_lin =  mean_pred_lin * scaler;
 
 % Duration and ISI manipulation is the same
 x = xISI;
 
 %% Plot: fMRI + scaled summed broadband model predictions
 
-fmriSummaryFig = figure('Color', [1 1 1], 'Position', [30 300 800 260]);
-set(fmriSummaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[550 260])
+fmriSummaryFig = figure('Color', [1 1 1], 'Position', [0 0 800 250]);
+set(fmriSummaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[800 250])
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 ybounds_fmri = [-1 5];
 
@@ -349,11 +358,11 @@ plot(ax6, x, fmri_pred_dn(predTwoPulseIndx), 'Color', modelColors(1,:), 'LineWid
 
 % Linear prediction (from HRF fits only)
 lin_pred = sum(fmri_results(1).y_est,1);
-plot(ax2, x, lin_pred(f_onepulse), 'Color', modelColors(2,:), 'LineWidth', 1.5)
-plot(ax3, 0, lin_pred(f_twopulse(1)), 'Color', modelColors(2,:), 'LineWidth', 1.5)
-plot(ax4, x(2:end), lin_pred(f_twopulse(2:end)), 'Color', modelColors(2,:), 'LineWidth', 1.5)
-plot(ax5, x, lin_pred(f_onepulse), 'Color', modelColors(2,:),'LineWidth', 1.5 )
-plot(ax6, x, lin_pred(f_twopulse), 'Color', modelColors(2,:), 'LineWidth', 1.5 )
+plot(ax2, x(2:end), fmri_pred_lin(predOnePulseIndx), 'Color', modelColors(2,:), 'LineWidth', 1.5)
+plot(ax3, 0, fmri_pred_lin(predTwoPulseIndx(1)), 'Color', modelColors(2,:), 'LineWidth', 1.5)
+plot(ax4, x(2:end), fmri_pred_lin(predTwoPulseIndx(2:end)), 'Color', modelColors(2,:), 'LineWidth', 1.5)
+plot(ax5, x(2:end), fmri_pred_lin(predOnePulseIndx), 'Color', modelColors(2,:),'LineWidth', 1.5 )
+plot(ax6, x, fmri_pred_lin(predTwoPulseIndx), 'Color', modelColors(2,:), 'LineWidth', 1.5 )
 
 tickspace = 1;
 ax2.Box = 'off';
