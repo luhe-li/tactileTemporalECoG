@@ -11,18 +11,19 @@ task        = 'vtstemporalpattern';
 numruns     = '1';
 inputFolder = 'ECoGBroadband_exclude110Hz';
 description = 'broadband';
+resample_rate = 512;
 
 %% 1: load ECoG data
 
 % Select epochs and channels, average trials within stimulus condition
 specs.plot_data    = false;
 specs.plot_smooth  = 1; % could try some other values
-specs.epoch_t      = [-0.4, 2.0]; % stimulus epoch window
+specs.epoch_t      = [-0.4, 2.2]; % stimulus epoch window
 specs.base_t       = [-0.4 -0.1]; % blank epoch window
 specs.chan_names   = {'C03', 'C04', 'C11', 'C12'};
 specs.stim_names   = {'ONEPULSE-1', 'ONEPULSE-2', 'ONEPULSE-3', 'ONEPULSE-4', 'ONEPULSE-5', 'ONEPULSE-6',...
     'TWOPULSE-1', 'TWOPULSE-2', 'TWOPULSE-3', 'TWOPULSE-4', 'TWOPULSE-5', 'TWOPULSE-6'};
-[data, channel, t, srate]   = tt_prepareData(bidsDir, subject, session, task, numruns, inputFolder, description, specs);
+[data, channel, t, srate]   = tt_prepareData(bidsDir, subject, session, task, numruns, inputFolder, description, specs, resample_rate);
 
 % Fix inconsistency between experiments, use the 'ONE-PULSE-1' as sample
 % condition names
@@ -37,7 +38,7 @@ end
 
 % Fitting DN/Linear model by reusing Iris' codes, removing probabilistic
 % resample step
-% modelfun          = {@DN,@LINEAR， @DN_fixw};
+% modelfun          = {@DN, @LINEAR， @DN_fixw};
 modelfun = @LINEAR;
 
 % Define options

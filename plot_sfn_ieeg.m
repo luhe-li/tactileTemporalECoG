@@ -155,7 +155,7 @@ figure(summaryFig)
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 
 % Load individual electrode data to get confidence interval
-tactile_indiv = load(fullfile(data_dir,sprintf('DN_xvalmode0_individualelecs_%s.mat', str)), ...
+tactile_indiv = load(fullfile(data_dir,sprintf('DN_fixw_xvalmode0_individualelecs_%s.mat', str)), ...
     'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params');
 
 cResponses68 = prctile(squeeze(sum(tactile_indiv.data, 1)), [15.87 84.13], 2);

@@ -128,7 +128,7 @@ summaryFig = figure('Color', [1 1 1], 'Position', [30 300 800 260]);
 set(summaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[550 260])
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 
-tactile_indiv = load(fullfile(data_dir,sprintf('DN_xvalmode0_individualelecs_%s.mat', str)), ...
+tactile_indiv = load(fullfile(data_dir,sprintf('DN_fixw_xvalmode0_individualelecs_%s.mat', str)), ...
     'data', 'pred', 'stim_info', 'stim', 't', 'channels', 'params');
 cResponses68 = prctile(squeeze(sum(tactile_indiv.data, 1)), [15.87 84.13], 2);
 cResponses95 = prctile(squeeze(sum(tactile_indiv.data, 1)), [2.5, 97.5], 2);
@@ -220,6 +220,8 @@ t3.YLabel.String = {'Summed broadband time-series';'(X-fold)'};
 
 saveas(summaryFig, fullfile(fig_dir, sprintf('%s_summed_responses', str)), 'pdf');
 
+disp(sum_pred{1})
+
 %% Load fMRI data
 
 clearvars -except xDur xISI stim_info data_dir modelColors fig_dir
@@ -258,16 +260,15 @@ num_subs = numel(subjects);
 % Load and extract DN model predictions for each subject
 for ss = 1:num_subs
     sub_str = subjects{ss};
+
     % Load DN model fits for each subject
     dn_path = fullfile(data_dir, sprintf('DN_fixw_xvalmode0_electrodeaverages_%s.mat', sub_str));
     if exist(dn_path,'file')
         Dsub = load(dn_path);
 
-        sub_pred = squeeze(sum(Dsub.pred,1)); % summed prediction per condition
+        dn_preds(ss,:) = squeeze(sum(Dsub.pred,1)); % summed prediction per condition
+        ieeg_data(ss,:) = sum(Dsub.data,1);
 
-        % Each model prediction is normalized by the summed data mean
-        dn_preds(ss,:) = sub_pred([predOnePulseIndx, predTwoPulseIndx])/mean(Dsub.data(:));
-        % ieeg_data(ss,:) = sum(Dsub.data,1);
     else
         error('File does not exist: %s', dn_path)
     end
@@ -277,7 +278,8 @@ end
 mean_pred_dn = mean(dn_preds,1);
 
 % Scale up by the mean of the fMRI data
-fmri_pred_dn =  mean_pred_dn *  mean(fmri_summed_data(:));
+scaler = mean(fmri_summed_data(:))/mean(ieeg_data(:));
+fmri_pred_dn =  mean_pred_dn * scaler;
 
 % Duration and ISI manipulation is the same
 x = xISI;
