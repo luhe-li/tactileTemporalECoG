@@ -5,7 +5,7 @@ stimdur         = 1;
 
 numTRs          = 11;
 x_data          = 0:1:numTRs-1; 
-samples         = 1000;
+samples         = 10000;
 dt              = 1/samples; % in s
 
 finer_t         = 0:1:4*samples; % model out to 4s (max duration is 1.6s)
@@ -30,13 +30,13 @@ figDir     = fullfile(projectDir, 'figures', 'modelSchematic');
 if ~exist(figDir, 'dir'), mkdir(figDir); end
 
 %%
-fig = figure('Color', [1 1 1], 'Position', [30 300 800 200]);
+fig = figure('Color', [1 1 1], 'Position', [30 300 1000 200]);
 set(fig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[800 390])
 
 %Stimulus sequence
 stimSeq         = finer_t > 0 & finer_t <= stimdur * samples;
 
-subplot(2,6,1)
+subplot(2,7,1)
 plot(finer_t, stimSeq, 'Color', gray, 'LineWidth', 1)
 box off; axis off
 xlim([0 2*samples])
@@ -47,10 +47,10 @@ h1_t            = x_data(1):dt:2;
 h1              = gampdf(h1_t, 2, tau); % assume weight = 0;
 h1              = normSum(h1);
 
-subplot(2,6,2)
+subplot(2,7,2)
 plot(h1, 'k', 'LineWidth', 2)
 box off; axis off
-xlim([0 2*samples])
+xlim([0 samples])
 title('h1', 'FontSize', 14)
 
 % convolve with irf to create neural predictions
@@ -58,7 +58,15 @@ linResp         = conv(stimSeq, h1, 'full');
 linResp         = linResp(1:length(finer_t));
 numResp         = abs(linResp).^n;
 
-subplot(2,6,3)
+subplot(2,7,3)
+plot(finer_t, linResp, 'k', 'LineWidth', 2)
+hold on,
+plot(finer_t, stimSeq, 'Color', gray, 'LineWidth', 1)
+box off; axis off
+xlim([0 2*samples])
+title('num resp^2', 'FontSize', 14)
+
+subplot(2,7,4)
 plot(finer_t, numResp, 'k', 'LineWidth', 2)
 hold on,
 plot(finer_t, stimSeq, 'Color', gray, 'LineWidth', 1)
@@ -73,13 +81,13 @@ poolResp        = conv(numResp, h2, 'full');
 poolResp        = poolResp(1:length(finer_t));
 demResp         = sigma.^n + abs(poolResp).^n;
 
-subplot(2,6,4)
+subplot(2,7,5)
 plot(h2, 'k', 'LineWidth', 2)
 box off; axis off
-% xlim([0 2*samples])
+xlim([0 samples])
 title('h2', 'FontSize', 14)
 
-subplot(2,6,5)
+subplot(2,7,6)
 plot(finer_t, demResp, 'k', 'LineWidth', 2)
 hold on,
 plot(finer_t, stimSeq, 'Color', gray, 'LineWidth', 1)
@@ -90,7 +98,7 @@ title('dem resp', 'FontSize', 14)
 % normalization response
 normResp        = numResp ./ demResp;
 
-subplot(2,6,6)
+subplot(2,7,7)
 plot(normResp, 'k', 'LineWidth', 2)
 hold on,
 plot(finer_t, stimSeq * max(normResp), 'Color', gray, 'LineWidth', 1)
