@@ -91,11 +91,11 @@ nexttile(tpanel,1); axis off;
 for i = 1:nSingle
     nexttile(tpanel,i+1)
     hold on
-    plot(t, stim_ts(:, onePulseIndx(i)) * ybounds(end), 'Color', [.5 .5 .5], 'HandleVisibility', 'off')
+    plot(t, stim_ts(:, onePulseIndx(i)) * ybounds(end), 'Color', [.3 .3 .3], 'HandleVisibility', 'off','LineWidth', 1.5)
     plot(t([1 end]), [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
-    plot(t, data(:,onePulseIndx(i)), 'k-', 'LineWidth', 1, 'DisplayName', 'Data')
+    plot(t, data(:,onePulseIndx(i)), 'k-', 'LineWidth', 2, 'DisplayName', 'Data')
     for j = 1%:numel(models_to_plot)
-        plot(t, preds{j}(:,onePulseIndx(i)), 'Color', modelColors(j,:), 'LineWidth', 1.5, 'DisplayName', modelLabels{j})
+        plot(t, preds{j}(:,onePulseIndx(i)), 'Color', modelColors(j,:), 'LineWidth', 3, 'DisplayName', modelLabels{j})
     end
     set(gca,'TickDir', 'out', 'FontSize', 14, 'XColor', 'k', 'YColor', 'k', ...
         'LineWidth', 1, 'TickLength', [0.05 0.05])
