@@ -17,7 +17,7 @@ runnums = [];
 
 % bidsEcogRereference(projectDir, subject, sessions, tasks, runnums, outputFolder)
 
-%% phase analysis
+%% Load data
 
 inputFolder = 'demean_CAR';
 description = 'reref';
@@ -25,4 +25,24 @@ description = 'reref';
 % Load data
 dataPath = fullfile(projectDir, 'derivatives', inputFolder);
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description);
-n
+
+%% Phase analysis
+
+% Parameters
+n_cycle = 5;      % Number of cycles (epochs)
+n_finger = 5;
+trial_duration = events.duration(1) + events.ISI(1); 
+T_cycle = trial_duration * n_finger;
+f0 = 1 / T_cycle;
+
+% Prepare data segment
+run_onset = events.event_sample(1);
+run_offset = run_onset + n_cycle*T_cycle*srate - 1;
+run_data = data(:, run_onset:run_offset); 
+n = size(run_data, 2);
+
+freqs = 1:;
+
+ft = fftshift(data(1,:));
+figure;plot(abs(ft).^2)
+figure; plot(data');
