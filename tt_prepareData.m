@@ -42,7 +42,7 @@ if ~isfield(specs,'average_stims') || isempty(specs.average_stims), specs.averag
 
 % Load data
 dataPath = fullfile(projectDir, 'derivatives', inputFolder);
-writePath = fullfile(projectDir, 'derivatives', 'modelFit', 'figure', subject);
+writePath = fullfile(projectDir, 'derivatives', 'ECoGFigures', 'figure', subject,'prepareData');
 
 [data, channels, events, srate] = bidsEcogGetPreprocData(dataPath, subject, sessions, tasks, runnums, description, srate_slc);
 
