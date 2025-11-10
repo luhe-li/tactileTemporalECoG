@@ -135,7 +135,7 @@ saveas(tcourseFig, fullfile(fig_dir, sprintf('%s_%s_timecourse_%s', str, models_
 
 %% Plot summed responses
 
-summaryFig = figure('Color', [1 1 1], 'Position', [0 0 800 250]);
+summaryFig = figure('Color', [1 1 1], 'Position', [0 0 1000 250]);
 set(summaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[800 250])
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 
@@ -195,19 +195,19 @@ plot(xISI, sum_data(twoPulseIndx), '.k', 'MarkerSize', 25,  'HandleVisibility', 
 nStimNew = 100;
 [stim2, stim_info2] = tt_simulateNewStimuli(t,nStimNew);
 stim_idx2 = find(contains(stim_info2.name, 'ONEPULSE'));
-x2 = stim_info2.duration(stim_idx2)';
-pred2 = nan([nModels size(stim2(:,stim_idx2))]);
+one_pulse_x2 = stim_info2.duration(stim_idx2)';
+one_pulse_pred2 = nan([nModels size(stim2(:,stim_idx2))]);
 srate = D.channels.sampling_frequency(1);
 for kk = 1:nModels
     DD = load(fullfile(data_dir, sprintf('%s_xvalmode0_electrodeaverages_%s.mat', models_to_plot{kk}, str)));
     prm = DD.params;
 
     % pred2: model x timepoint x trial/condition
-    [~, pred2(kk,:,:)] = DD.objFunction(prm, [], stim2(:,stim_idx2), srate);
+    [~, one_pulse_pred2(kk,:,:)] = DD.objFunction(prm, [], stim2(:,stim_idx2), srate);
 
     % Plot
-    plot(ax2, x2, sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
-    plot(ax5, x2, sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
+    plot(ax2, one_pulse_x2, sum(squeeze(one_pulse_pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
+    plot(ax5, one_pulse_x2, sum(squeeze(one_pulse_pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
 end
 
 % Model predictions of two-pulse
@@ -216,8 +216,8 @@ nStimNew = 100;
 stim_idx2 = find(contains(stim_info2.name, 'TWOPULSE'));
 stim2 = stim2(:,stim_idx2);
 stim_info2 = stim_info2(stim_idx2,:);
-x2 = stim_info2.ISI';
-pred2 = nan([nModels size(stim2)]);
+two_pulse_x2 = stim_info2.ISI';
+two_pulse_pred2 = nan([nModels size(stim2)]);
 
 % Overplot model predictions
 for kk = 1:numel(models_to_plot)
@@ -225,13 +225,13 @@ for kk = 1:numel(models_to_plot)
     prm = DD.params;
 
     % pred2: model x timepoint x trial/condition
-    [~, pred2(kk,:,:)] = DD.objFunction(prm, [], stim2, srate);
+    [~, two_pulse_pred2(kk,:,:)] = DD.objFunction(prm, [], stim2, srate);
 
-    x_ax2 = x2<0.04;
-    x_ax3 = x2>=0.04;
-    plot(ax3, x2(x_ax2), sum(squeeze(pred2(kk,:,x_ax2)),1), 'Color', modelColors(kk,:), 'LineWidth',2)
-    plot(ax4, x2(x_ax3), sum(squeeze(pred2(kk,:,x_ax3)),1), 'Color', modelColors(kk,:), 'LineWidth',2)
-    plot(ax6, x2, sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
+    x_ax2 = two_pulse_x2<0.03;
+    x_ax3 = two_pulse_x2>=0.03;
+    plot(ax3, two_pulse_x2(x_ax2), sum(squeeze(two_pulse_pred2(kk,:,x_ax2)),1), 'Color', modelColors(kk,:), 'LineWidth',2)
+    plot(ax4, two_pulse_x2(x_ax3), sum(squeeze(two_pulse_pred2(kk,:,x_ax3)),1), 'Color', modelColors(kk,:), 'LineWidth',2)
+    plot(ax6, two_pulse_x2, sum(squeeze(two_pulse_pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
 end
 
 ybounds = get(ax2, 'YLim');
@@ -267,7 +267,7 @@ saveas(summaryFig, fullfile(fig_dir, sprintf('%s_summed_responses', str)), 'pdf'
 
 %% Load fMRI data
 
-clearvars -except xDur xISI stim_info data_dir modelColors fig_dir models_to_plot
+clearvars -except xDur xISI stim_info data_dir modelColors fig_dir models_to_plot one_pulse_pred2 two_pulse_pred2 one_pulse_x2 two_pulse_x2
 
 % ----- load fMRI data -----
 fmri_data_dir = '/Volumes/server/Projects/TemporalTactileCounting/Data/modelOutput';
@@ -291,9 +291,16 @@ fmri_ci_68 = nan(numel(f_allpulse),2);
 
 for i = 1:numel(f_allpulse)
     fmri_summed_data(i) = sum(fmri_results(1).y_data(:,f_allpulse(i)));
-    fmri_btst = sum(squeeze(fmri_results(2).y_data(:,f_allpulse(i),:)),1);
-    fmri_ci_95(i,:) = prctile(fmri_btst, [2.5, 97.5]);
-    fmri_ci_68(i,:) = prctile(fmri_btst, [15.87, 84.13]);
+
+    % sum the time points first, take confidence interval next
+    % fmri_btst = sum(squeeze(fmri_results(2).y_data(:,f_allpulse(i),:)), 1);
+    % fmri_ci_95(i,:) = prctile(fmri_btst, [2.5, 97.5]);
+    % fmri_ci_68(i,:) = prctile(fmri_btst, [15.87, 84.13]);
+
+    % take confidence interval for each time point across bootstrapped
+    % trials, and then sum
+    fmri_ci_95(i,:) = sum(prctile(squeeze(fmri_results(2).y_data(:,f_allpulse(i),:)), [2.5, 97.5],2),1);
+    fmri_ci_68(i,:) = sum(prctile(squeeze(fmri_results(2).y_data(:,f_allpulse(i),:)), [15.87, 84.13],2),1);
 end
 
 % ----- predict fmri from group averaged ECoG data -----
@@ -325,16 +332,18 @@ mean_pred_lin = mean(sum_preds{2},1);
 
 % Scale up by the mean of the fMRI data
 scaler = mean(fmri_summed_data(:))/mean(ieeg_data(:));
-fmri_pred_dn =  mean_pred_dn * scaler;
-fmri_pred_lin =  mean_pred_lin * scaler;
+% model_pred2: model x timepoint x trial/condition
+% Sum across timeponts
+fmri_one_pulse_pred =  sum(one_pulse_pred2,2) * scaler;
+fmri_two_pulse_pred =  sum(two_pulse_pred2,2) * scaler;
 
 % Duration and ISI manipulation is the same
 x = xISI;
 
 %% Plot: fMRI + scaled summed broadband model predictions
 
-fmriSummaryFig = figure('Color', [1 1 1], 'Position', [0 0 800 250]);
-set(fmriSummaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[800 250])
+fmriSummaryFig = figure('Color', [1 1 1], 'Position', [0 0 1000 250]);
+set(fmriSummaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[1000 250])
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 ybounds_fmri = [-1 5];
 
@@ -360,7 +369,7 @@ t2 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
 t2.Layout.Tile = 2;
 ax3 = nexttile(t2,[1 1]);
 hold on
-plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot([-0.1 0.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
 plot(x(1) .* [1; 1], fmri_ci_95((1)+numel(f_onepulse),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(1) .* [1; 1], fmri_ci_68((1)+numel(f_onepulse),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(1),  fmri_summed_data((1)+numel(f_onepulse)), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
@@ -387,20 +396,18 @@ plot(x .* [1; 1], fmri_ci_95((1:numel(f_onepulse))+numel(f_onepulse),:)', 'Color
 plot(x .* [1; 1], fmri_ci_68((1:numel(f_onepulse))+numel(f_onepulse),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x,  fmri_summed_data((1:numel(f_onepulse))+numel(f_onepulse)), '.k', 'MarkerSize', 10,  'HandleVisibility', 'off')
 
-% Model predictions
-plot(ax2, x(2:end), fmri_pred_dn(predOnePulseIndx), 'Color', modelColors(1,:), 'LineWidth', 1.5)
-plot(ax3, 0, fmri_pred_dn(predTwoPulseIndx(1)), 'Color', modelColors(1,:), 'LineWidth', 1.5)
-plot(ax4, x(2:end), fmri_pred_dn(predTwoPulseIndx(2:end)), 'Color', modelColors(1,:), 'LineWidth', 1.5)
-plot(ax5, x(2:end), fmri_pred_dn(predOnePulseIndx), 'Color', modelColors(1,:), 'LineWidth', 1.5 )
-plot(ax6, x, fmri_pred_dn(predTwoPulseIndx), 'Color', modelColors(1,:), 'LineWidth', 1.5 )
+for kk = 1:2
+    % one pulse 
+    plot(ax2, one_pulse_x2, fmri_one_pulse_pred(kk,:), 'Color', modelColors(kk,:), 'LineWidth', 2)
+    plot(ax5, one_pulse_x2, fmri_one_pulse_pred(kk,:), 'Color', modelColors(kk,:), 'LineWidth', 2)
 
-% Linear prediction (from HRF fits only)
-lin_pred = sum(fmri_results(1).y_est,1);
-plot(ax2, x(2:end), fmri_pred_lin(predOnePulseIndx), 'Color', modelColors(2,:), 'LineWidth', 1.5)
-plot(ax3, 0, fmri_pred_lin(predTwoPulseIndx(1)), 'Color', modelColors(2,:), 'LineWidth', 1.5)
-plot(ax4, x(2:end), fmri_pred_lin(predTwoPulseIndx(2:end)), 'Color', modelColors(2,:), 'LineWidth', 1.5)
-plot(ax5, x(2:end), fmri_pred_lin(predOnePulseIndx), 'Color', modelColors(2,:),'LineWidth', 1.5 )
-plot(ax6, x, fmri_pred_lin(predTwoPulseIndx), 'Color', modelColors(2,:), 'LineWidth', 1.5 )
+    % two pulse 
+    x_ax2 = two_pulse_x2<0.03;
+    x_ax3 = two_pulse_x2>=0.03;
+    plot(ax3, two_pulse_x2(x_ax2), fmri_two_pulse_pred(kk,x_ax2), 'Color', modelColors(kk,:), 'LineWidth',2)
+    plot(ax4, two_pulse_x2(x_ax3), fmri_two_pulse_pred(kk,x_ax3), 'Color', modelColors(kk,:), 'LineWidth',2)
+    plot(ax6, two_pulse_x2, fmri_two_pulse_pred(kk,:), 'Color', modelColors(kk,:), 'LineWidth', 2)
+end
 
 tickspace = 1;
 ax2.Box = 'off';

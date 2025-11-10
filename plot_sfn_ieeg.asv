@@ -135,7 +135,7 @@ saveas(tcourseFig, fullfile(fig_dir, sprintf('%s_%s_timecourse_%s', str, models_
 
 %% Plot summed responses
 
-summaryFig = figure('Color', [1 1 1], 'Position', [0 0 800 250]);
+summaryFig = figure('Color', [1 1 1], 'Position', [0 0 1000 250]);
 set(summaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[800 250])
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 
@@ -162,7 +162,7 @@ t2 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
 t2.Layout.Tile = 2;
 ax3 = nexttile(t2,[1 1]);
 hold on
-plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot([-0.1 0.4], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
 plot(xISI(1).* [1; 1], cResponses95(twoPulseIndx(1),:), 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(xISI(1).* [1; 1], cResponses68(twoPulseIndx(1),:), 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(xISI(1),  sum_data(twoPulseIndx(1)), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
@@ -192,10 +192,10 @@ plot(xISI.* [1; 1], cResponses68(twoPulseIndx,:)', 'Color', [0 0 0], 'LineWidth'
 plot(xISI, sum_data(twoPulseIndx), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
 
 % Model predictions of one-pulse
-nStimNew = 50;
+nStimNew = 100;
 [stim2, stim_info2] = tt_simulateNewStimuli(t,nStimNew);
 stim_idx2 = find(contains(stim_info2.name, 'ONEPULSE'));
-x2 = stim_info2.duration(stim_idx2);
+x2 = stim_info2.duration(stim_idx2)';
 pred2 = nan([nModels size(stim2(:,stim_idx2))]);
 srate = D.channels.sampling_frequency(1);
 for kk = 1:nModels
@@ -206,19 +206,32 @@ for kk = 1:nModels
     [~, pred2(kk,:,:)] = DD.objFunction(prm, [], stim2(:,stim_idx2), srate);
 
     % Plot
-    plot(ax2, x2', sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(j,:), 'LineWidth', 2)
+    plot(ax2, x2, sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
+    plot(ax5, x2, sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
 end
 
-
 % Model predictions of two-pulse
+nStimNew = 100;
+[stim2, stim_info2] = tt_simulateNewStimuli(t,nStimNew);
+stim_idx2 = find(contains(stim_info2.name, 'TWOPULSE'));
+stim2 = stim2(:,stim_idx2);
+stim_info2 = stim_info2(stim_idx2,:);
+x2 = stim_info2.ISI';
+pred2 = nan([nModels size(stim2)]);
 
 % Overplot model predictions
-for j = 1:numel(models_to_plot)
-    plot(ax2, xDur, sum_pred{j}(onePulseIndx), 'Color', modelColors(j,:), 'LineWidth', 2)
-    plot(ax3, xISI(1), sum_pred{j}(twoPulseIndx(1)), 'Color', modelColors(j,:), 'LineWidth',2)
-    plot(ax4, xISI(2:end), sum_pred{j}(twoPulseIndx(2:end)), 'Color', modelColors(j,:), 'LineWidth',2)
-    plot(ax5, xDur, sum_pred{j}(onePulseIndx), 'Color', modelColors(j,:), 'LineWidth', 2)
-    plot(ax6, xISI, sum_pred{j}(twoPulseIndx), 'Color', modelColors(j,:), 'LineWidth', 2)
+for kk = 1:numel(models_to_plot)
+    DD = load(fullfile(data_dir, sprintf('%s_xvalmode0_electrodeaverages_%s.mat', models_to_plot{kk}, str)));
+    prm = DD.params;
+
+    % pred2: model x timepoint x trial/condition
+    [~, pred2(kk,:,:)] = DD.objFunction(prm, [], stim2, srate);
+
+    x_ax2 = x2<0.04;
+    x_ax3 = x2>=0.04;
+    plot(ax3, x2(x_ax2), sum(squeeze(pred2(kk,:,x_ax2)),1), 'Color', modelColors(kk,:), 'LineWidth',2)
+    plot(ax4, x2(x_ax3), sum(squeeze(pred2(kk,:,x_ax3)),1), 'Color', modelColors(kk,:), 'LineWidth',2)
+    plot(ax6, x2, sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(kk,:), 'LineWidth', 2)
 end
 
 ybounds = get(ax2, 'YLim');
@@ -278,9 +291,12 @@ fmri_ci_68 = nan(numel(f_allpulse),2);
 
 for i = 1:numel(f_allpulse)
     fmri_summed_data(i) = sum(fmri_results(1).y_data(:,f_allpulse(i)));
-    fmri_btst = sum(squeeze(fmri_results(2).y_data(:,f_allpulse(i),:)),1);
-    fmri_ci_95(i,:) = prctile(fmri_btst, [2.5, 97.5]);
-    fmri_ci_68(i,:) = prctile(fmri_btst, [15.87, 84.13]);
+    % fmri_btst = sum(squeeze(fmri_results(2).y_data(:,f_allpulse(i),:)), 1);
+    % fmri_ci_95(i,:) = prctile(fmri_btst, [2.5, 97.5]);
+    % fmri_ci_68(i,:) = prctile(fmri_btst, [15.87, 84.13]);
+
+    fmri_ci_95(i,:) = prctile(squeeze(results(2).y_data(:,allPulsesIndx(ii),:)), [2.5, 97.5]);
+    fmri_ci_68(i,:) = prctile(squeeze(results(2).y_data(:,allPulsesIndx(ii),:)), [15.87, 84.13]);
 end
 
 % ----- predict fmri from group averaged ECoG data -----
