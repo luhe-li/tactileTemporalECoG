@@ -21,6 +21,7 @@ end
 epoch_t = [-0.4, 1.6];
 models_to_plot = {'DN_fixw','LINEAR'};
 modelLabels = {'DN', 'LIN'};
+nModels = numel(models_to_plot);
 str = 'umcudrouwen'; %umcudrouwen/ny726/group_average
 
 modelColors = [218, 62, 82; 45, 125, 210]./255; % red and blue
@@ -37,17 +38,20 @@ for ii = 1:numel(models_to_plot)
     CV_R2(ii) = cv_results{ii}.R2.concat_all;
 end
 
+
 %% Load first model for metadata and common variables
 
-Dbase = load(fullfile(data_dir, sprintf('%s_xvalmode0_electrodeaverages_%s.mat', models_to_plot{1}, str)));
-data = Dbase.data;
-stim_info = Dbase.stim_info;
-stim_ts = Dbase.stim;
-t = Dbase.t;
-channels = Dbase.channels;
+D = load(fullfile(data_dir, sprintf('%s_xvalmode0_electrodeaverages_%s.mat', models_to_plot{1}, str)));
+data = D.data;
+stim_info = D.stim_info;
+stim_ts = D.stim;
+t = D.t;
+channels = D.channels;
 
 is_onepulse = contains(stim_info.name, 'ONE-PULSE');
 is_twopulse = contains(stim_info.name, 'ONE-PULSE-4') | contains(stim_info.name, 'TWO-PULSE');
+idx_onepulse = find(is_onepulse);
+idx_twopulse = find(is_twopulse); 
 
 onePulseIndx = find(is_onepulse);
 twoPulseIndx = find(is_twopulse);
@@ -140,8 +144,8 @@ tactile_indiv = load(fullfile(data_dir,sprintf('DN_fixw_xvalmode0_individualelec
 cResponses68 = prctile(squeeze(sum(tactile_indiv.data, 1)), [15.87 84.13], 2);
 cResponses95 = prctile(squeeze(sum(tactile_indiv.data, 1)), [2.5, 97.5], 2);
 
-x = stim_info.duration(onePulseIndx)'; % more robust to not hardcode
-if numel(x) == 0; x = [0.05, 0.1, 0.2, 0.4, 0.8, 1.2]; end % fallback default
+x = stim_info.duration(onePulseIndx)';
+if numel(x) == 0; x = [0.05, 0.1, 0.2, 0.4, 0.8, 1.2]; end 
 
 % One pulse: main axis (ax2)
 t1 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
@@ -186,6 +190,27 @@ plot([-0.05 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
 plot(xISI .* [1; 1], cResponses95(twoPulseIndx,:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(xISI.* [1; 1], cResponses68(twoPulseIndx,:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(xISI, sum_data(twoPulseIndx), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
+
+% Model predictions of one-pulse
+nStimNew = 50;
+[stim2, stim_info2] = tt_simulateNewStimuli(t,nStimNew);
+stim_idx2 = find(contains(stim_info2.name, 'ONEPULSE'));
+x2 = stim_info2.duration(stim_idx2);
+pred2 = nan([nModels size(stim2(:,stim_idx2))]);
+srate = D.channels.sampling_frequency(1);
+for kk = 1:nModels
+    DD = load(fullfile(data_dir, sprintf('%s_xvalmode0_electrodeaverages_%s.mat', models_to_plot{kk}, str)));
+    prm = DD.params;
+
+    % pred2: model x timepoint x trial/condition
+    [~, pred2(kk,:,:)] = DD.objFunction(prm, [], stim2(:,stim_idx2), srate);
+
+    % Plot
+    plot(ax2, x2', sum(squeeze(pred2(kk,:,:)),1), 'Color', modelColors(j,:), 'LineWidth', 2)
+end
+
+
+% Model predictions of two-pulse
 
 % Overplot model predictions
 for j = 1:numel(models_to_plot)
