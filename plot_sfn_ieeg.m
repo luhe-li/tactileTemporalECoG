@@ -345,20 +345,21 @@ fmriSummaryFig = figure('Color', [1 1 1], 'Position', [0 0 1000 250]);
 set(fmriSummaryFig,'Units', 'Pixels', 'PaperPositionMode','Auto','PaperUnits','points','PaperSize',[1000 250])
 T = tiledlayout(1, 3,'TileIndexing','rowmajor');
 ybounds_fmri = [-1 5];
+breakpoint = 0.02;
 
 %-- one pulse
 t1 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
 t1.Layout.Tile = 1;
 ax1 = nexttile(t1,[1 1]);
 hold on
-plot([-0.1 0.1], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot([-0.1 breakpoint], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
 plot(x(1) .* [1; 1],fmri_ci_95(1,:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(1) .* [1; 1], fmri_ci_68(1,:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(1),  fmri_summed_data(1), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
 
 ax2 = nexttile(t1,[1 2]);
 hold on
-plot([0.04 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot([breakpoint 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
 plot(x(2:end) .* [1; 1], fmri_ci_95(2:numel(f_onepulse),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(2:end) .* [1; 1], fmri_ci_68(2:numel(f_onepulse),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(2:end), fmri_summed_data(2:numel(f_onepulse)), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
@@ -368,14 +369,14 @@ t2 = tiledlayout(T,1,3,'TileIndexing','columnmajor');
 t2.Layout.Tile = 2;
 ax3 = nexttile(t2,[1 1]);
 hold on
-plot([-0.1 0.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot([-0.1 breakpoint], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
 plot(x(1) .* [1; 1], fmri_ci_95((1)+numel(f_onepulse),:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(1) .* [1; 1], fmri_ci_68((1)+numel(f_onepulse),:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(1),  fmri_summed_data((1)+numel(f_onepulse)), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
 
 ax4 = nexttile(t2,[1 2]);
 hold on
-plot([0.04 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
+plot([breakpoint 1.3], [0 0], 'k', 'LineWidth', 1, 'HandleVisibility','off')
 plot(x(2:end) .* [1; 1], fmri_ci_95((2+numel(f_onepulse)):end,:)', 'Color', [0.8 0.8 0.8], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(2:end) .* [1; 1], fmri_ci_68((2+numel(f_onepulse)):end,:)', 'Color', [0 0 0], 'LineWidth', 2, 'HandleVisibility', 'off')
 plot(x(2:end),  fmri_summed_data((2+numel(f_onepulse)):end), '.k', 'MarkerSize', 25,  'HandleVisibility', 'off')
@@ -396,13 +397,18 @@ plot(x .* [1; 1], fmri_ci_68((1:numel(f_onepulse))+numel(f_onepulse),:)', 'Color
 plot(x,  fmri_summed_data((1:numel(f_onepulse))+numel(f_onepulse)), '.k', 'MarkerSize', 10,  'HandleVisibility', 'off')
 
 for kk = 1:2
-    % one pulse 
-    plot(ax2, one_pulse_x2, fmri_one_pulse_pred(kk,:), 'Color', modelColors(kk,:), 'LineWidth', 2)
+
+
+    % one pulse
+    x_ax2 = one_pulse_x2<breakpoint;
+    x_ax3 = one_pulse_x2>=breakpoint;
+    plot(ax1, one_pulse_x2(x_ax2), fmri_one_pulse_pred(kk,x_ax2), 'Color', modelColors(kk,:), 'LineWidth', 2)
+    plot(ax2, one_pulse_x2(x_ax3), fmri_one_pulse_pred(kk,x_ax3), 'Color', modelColors(kk,:), 'LineWidth', 2)
     plot(ax5, one_pulse_x2, fmri_one_pulse_pred(kk,:), 'Color', modelColors(kk,:), 'LineWidth', 2)
 
     % two pulse 
-    x_ax2 = two_pulse_x2<0.03;
-    x_ax3 = two_pulse_x2>=0.03;
+        x_ax2 = two_pulse_x2<breakpoint;
+    x_ax3 = two_pulse_x2>=breakpoint;
     plot(ax3, two_pulse_x2(x_ax2), fmri_two_pulse_pred(kk,x_ax2), 'Color', modelColors(kk,:), 'LineWidth',2)
     plot(ax4, two_pulse_x2(x_ax3), fmri_two_pulse_pred(kk,x_ax3), 'Color', modelColors(kk,:), 'LineWidth',2)
     plot(ax6, two_pulse_x2, fmri_two_pulse_pred(kk,:), 'Color', modelColors(kk,:), 'LineWidth', 2)
@@ -416,16 +422,16 @@ t1.YLabel.String = {'Summed BOLD time series';'(%SC)'};
 
 set(ax1, 'TickDir', 'out', 'XTick', 0, 'XTickLabel', 0, ...
     'FontSize', 10, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
-    'YTick', ybounds_fmri(1):1:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [-0.005 0.01]);
+    'YTick', ybounds_fmri(tickspace):1:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [-0.005 0.01]);
 set(ax2, 'TickDir', 'out', 'XTick', [0.1 1], 'XTickLabel', [0.1 1], ...
     'Xscale', 'log', 'FontSize', 10, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
-    'YTick', ybounds_fmri(1):tickspace:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [0.035 1.3]); ax2.YAxis.Visible = 'off';
+    'YTick', ybounds_fmri(1):tickspace:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [breakpoint 1.3]); ax2.YAxis.Visible = 'off';
 set(ax3, 'TickDir', 'out', 'XTick', 0, 'XTickLabel', 0, ...
     'FontSize', 10, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
     'YTick', ybounds_fmri(1):tickspace:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [-0.005 0.01]);
 set(ax4, 'TickDir', 'out', 'XTick', [0.1 1], 'XTickLabel', [0.1 1], ...
     'Xscale', 'log', 'FontSize', 10, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
-    'YTick', ybounds_fmri(1):tickspace:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [0.04 1.3]); ax4.YAxis.Visible = 'off';
+    'YTick', ybounds_fmri(1):tickspace:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [breakpoint 1.3]); ax4.YAxis.Visible = 'off';
 set(ax5, 'TickDir', 'out', 'XTick', 0:0.4:1.2, 'XTickLabel', 0:0.4:1.2, ...
     'FontSize', 8, 'XColor', 'k', 'YColor', 'k', 'LineWidth', 1, ...
     'YTick', ybounds_fmri(1):tickspace:ybounds_fmri(2), 'YLim', ybounds_fmri, 'XLim', [-0.1 1.3]);

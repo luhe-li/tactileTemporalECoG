@@ -11,9 +11,11 @@ stimDUR = zeros(length(t),nStim);
 nameDUR = cell(nStim,1);
 durationDUR = zeros(nStim,1);
 isiDUR = zeros(nStim,1);
+Durs = linspace(0, 1.2, nStim);
 
 for ii = 1:nStim
-    t_off = ii/nStim * 1.2;
+    % t_off = ii/nStim * 1.2;
+    t_off = Durs(ii);
     stim_on = t>0 & t<=t_off;
     stimDUR(stim_on,ii) = 1;
     durationDUR(ii) = round(t_off,3);
