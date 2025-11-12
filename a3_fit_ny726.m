@@ -29,7 +29,7 @@ specs.stim_names   = {'ONE-PULSE-1', 'ONE-PULSE-2', 'ONE-PULSE-3', 'ONE-PULSE-4'
 %% 2. Model fitting to average electrodes, both models, both full fit and crossvalidation
 
 % {@DN, @LINEAR @DN_fixw};
-modelfun          = {@LINEAR @DN_fixw};
+modelfun          = {@DN_fixw};
 
 % Define parameters
 options.doplots   = false;
@@ -37,18 +37,17 @@ options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
 options.display   = 'off';  % 'iter' 'final' 'off'
 options.algorithm = 'bads';
 options.average_elecs = true;
-
-% Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
-tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
-
-% Do crossvalidation
-options.xvalmode  = 1;
-tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
-
-% %% 3. Model fitting to each electrodes, DN model and full fit only to get parameter estimates confidence interval
 % 
-% % modelfun          = @DN;
-% modelfun          = @DN_fixw;
-% options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
-% options.average_elecs = false;
+% % Compute model fit(s); data and fits will be saved to 'derivative/modelFit/results' folder
 % tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
+% 
+% % Do crossvalidation
+% options.xvalmode  = 1;
+% tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);
+
+%% 3. Model fitting to each electrodes, DN model and full fit only to get parameter estimates confidence interval
+
+modelfun          = @DN_fixw;
+options.xvalmode  = 0;      % 0 = none, 1 = stimulus leave-one-out
+options.average_elecs = false;
+tt_doModelFits(modelfun, stim_ts, data, channel, srate, t, stim_info, options, [], subject);

@@ -20,9 +20,9 @@ end
 
 epoch_t = [-0.4, 1.6];
 models_to_plot = {'DN_fixw','LINEAR'};
-modelLabels = {'DN', 'LIN'};
+modelLabels = {'DN_fixx', 'LIN'};
 nModels = numel(models_to_plot);
-str = 'umcudrouwen'; %umcudrouwen/ny726/group_average
+str = 'ny726'; %umcudrouwen/ny726/group_average
 
 modelColors = [218, 62, 82; 45, 125, 210]./255; % red and blue
 
@@ -37,7 +37,6 @@ for ii = 1:numel(models_to_plot)
     cv_results{ii} = tt_evaluateModelFit(cv_D,includeDerivedParams);
     CV_R2(ii) = cv_results{ii}.R2.concat_all;
 end
-
 
 %% Load first model for metadata and common variables
 
@@ -308,7 +307,7 @@ subjects = {'umcudrouwen','ny726'};
 num_subs = numel(subjects);
 
 % Load and extract DN model predictions for each subject
-for ss = 1%:num_subs
+for ss = num_subs
     sub_str = subjects{ss};
 
     for mm = 1:numel(models_to_plot)
